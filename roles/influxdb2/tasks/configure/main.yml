@@ -1,0 +1,65 @@
+---
+
+- name: create influxdb config directory
+  ansible.builtin.file:
+    path: "{{ influxdb_config_dir }}"
+    state: directory
+    owner: "{{ influxdb_system_user }}"
+    group: root
+    mode: "0755"
+
+- name: create influxdb configuration
+  ansible.builtin.template:
+    src: etc/influxdb/config.yml.j2
+    dest: "{{ influxdb_config_dir }}/config.yml"
+    owner: root
+    group: "{{ influxdb_system_group }}"
+    mode: "0644"
+  notify:
+    - restart service
+
+- name: ensure influxdb is started
+  become: true
+  ansible.builtin.service:
+    name: influxdb
+    state: started
+
+- name: ensure influxdb is up and running
+  influx_ping:
+    host: "http://127.0.0.1:8086"
+  retries: 10
+  delay: 5
+  register: _ping
+  until: _ping.rc == 0
+  changed_when: false
+
+- name: set influxdb default user, organization, and bucket
+  influx_setup:
+    host: "http://127.0.0.1:8086"
+    org: "{{ influxdb_primary.organization }}"
+    bucket: "{{ influxdb_primary.bucket }}"
+    username: "{{ influxdb_primary.username }}"
+    password: "{{ influxdb_primary.password }}"
+    token: "{{ influxdb_primary.token }}"
+    force: true
+  register: _setup
+
+- name: ensure organizations exists
+  influx_organizations:
+    host: "http://127.0.0.1:8086"
+    organizations: "{{ influxdb_organizations }}"
+  register: _org
+
+- name: ensure users exist
+  influx_users:
+    host: "http://127.0.0.1:8086"
+    users: "{{ influxdb_users }}"
+  register: _users
+
+- name: ensure buckets exist
+  influx_buckets:
+    host: "http://127.0.0.1:8086"
+    buckets: "{{ influxdb_buckets }}"
+  register: _buckets
+
+...

@@ -1,0 +1,53 @@
+---
+
+# see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influxdb/
+influxdb_version: "2.4.0"
+# see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influx-cli/
+influxdb_cli_version: "{{ influxdb_version }}"
+
+influxdb_scm:
+  use_tags: false
+  without_beta: false
+  version_filter:
+    - ".*test*"
+    - ".*preview"
+    - ".*beta"
+    - ".*rc"
+
+influxdb_release: {}
+  # download_url: ""
+  # api_url: ""
+  # files:
+  #   influxdb: ""
+  #   influx_client: ""
+  # binaries:
+  #   influxd: ""
+  #   influx: ""
+
+influxdb_system_user: influxdb
+influxdb_system_group: influxdb
+influxdb_config_dir: /etc/influxdb
+influxdb_storage_dir: /var/lib/influxdb
+
+influxdb_direct_download: false
+
+influxdb_service: {}
+
+influxdb_config:
+  http-bind-address: 127.0.0.1:8086
+  reporting-disabled: true
+
+influxdb_primary:
+  organization: example-org
+  bucket: example-bucket
+  username: example-user
+  password: LA9NMTb6WZ285zPGPgyUJEucuJUjr6W7
+  token: example-token
+
+influxdb_organizations: {}
+
+influxdb_users: {}
+
+influxdb_buckets: {}
+
+...

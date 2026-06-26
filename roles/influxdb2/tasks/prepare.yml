@@ -1,0 +1,45 @@
+---
+
+- name: include OS specific configuration ({{ ansible_distribution }} ({{ ansible_os_family }}) {{ ansible_distribution_major_version }})
+  ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      paths:
+        - "vars"
+      files:
+        # eg. debian-10 / ubuntu-20.04 / centos-8 / oraclelinux-8
+        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
+        # eg. archlinux-systemd / archlinux-openrc
+        - "{{ ansible_distribution | lower }}-{{ ansible_service_mgr | lower }}.yml"
+        # eg. debian / ubuntu / centos / oraclelinux
+        - "{{ ansible_distribution | lower }}.yml"
+        # eg. redhat / debian / archlinux
+        - "{{ ansible_os_family | lower }}.yml"
+        # artixlinux
+        - "{{ ansible_os_family | lower | replace(' ', '') }}.yml"
+        - default.yaml
+      skip: true
+
+- name: install dependency
+  ansible.builtin.package:
+    name: "{{ influxdb_requirements }}"
+    state: present
+  when:
+    - influxdb_requirements | default([]) | count > 0
+
+- name: assert wrong influxdb version
+  ansible.builtin.assert:
+    that:
+      - influxdb_main_version | int == 2
+    msg:
+      - this role handle only influxdb2
+      - for influxdb1 support, please use  mkayontour.ansible-influxdb
+    quiet: true
+  when:
+    - influxdb_version != "latest"
+
+- name: merge influxdb configuration between defaults and custom
+  ansible.builtin.set_fact:
+    influxdb_service: "{{ influxdb_defaults_service | combine(influxdb_service, recursive=True) }}"
+
+...

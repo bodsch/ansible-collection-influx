@@ -1,0 +1,62 @@
+---
+
+- name: define influxdb http service
+  ansible.builtin.set_fact:
+    influxdb_http: "{{ influxdb_service.http | influxdb_bind(core_version=influxdb_main_version) }}"
+
+- name: create influxdb config directory
+  when:
+    - not running_in_check_mode
+  ansible.builtin.file:
+    path: "{{ influxdb_config_dir }}"
+    state: directory
+    owner: "{{ influxdb_system_user }}"
+    group: root
+    mode: "0755"
+
+- name: create influxdb configuration
+  when:
+    - not running_in_check_mode
+  ansible.builtin.template:
+    src: etc/influxdb/config.yml.j2
+    dest: "{{ influxdb_config_dir }}/config.yml"
+    owner: root
+    group: "{{ influxdb_system_group }}"
+    mode: "0644"
+  notify:
+    - restart service
+
+- name: ensure {{ influxdb_release.binaries.core }} is started
+  when:
+    - not running_in_check_mode
+  become: true
+  ansible.builtin.service:
+    name: "{{ influxdb_release.binaries.core }}"
+    state: started
+
+- name: ensure influxdb is up and running
+  when:
+    - not running_in_check_mode
+  influx_ping:
+    main_version: "{{ influxdb_main_version }}"
+    host: "{{ influxdb_http }}"
+  retries: 10
+  delay: 5
+  register: _ping
+  until: _ping.rc == 0
+  changed_when: false
+
+- name: influxdb2
+  ansible.builtin.include_tasks: configure/influxdb2.yml
+  when:
+    - not running_in_check_mode
+    - influxdb_main_version | int == 2
+
+- name: influxdb3
+  ansible.builtin.include_tasks: configure/influxdb3.yml
+  when:
+    - not running_in_check_mode
+    - influxdb_main_version | int == 3
+
+
+...

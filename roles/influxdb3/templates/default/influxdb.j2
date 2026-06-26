@@ -1,0 +1,398 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+{% if influxdb_main_version | int == 2 %}
+OPTIONS="
+{% if influxdb_service is defined %}
+  --log-level {{ influxdb_service.log.level | default('info') }} \
+  --instance-id {{ influxdb_service.instance_id }} \
+  {% if influxdb_service.metrics.enabled is defined and
+        not influxdb_service.metrics.enabled %}
+  --metrics-disabled \
+  {% endif %}
+  {% if influxdb_service.ui.enabled is defined and
+        not influxdb_service.ui.enabled %}
+  --ui-disabled \
+  {% endif %}
+{#
+  {% if influxdb_service.http is defined %}
+    {% if influxdb_service.http.bind_address is defined and
+          influxdb_service.http.bind_address | string | length > 0 %}
+  --http-bind-address {{ influxdb_service.http.bind_address }} \
+    {% endif %}
+    {% if influxdb_service.http.timeouts is defined %}
+      {% if influxdb_service.http.timeouts.idle is defined and
+            influxdb_service.http.timeouts.idle | string | length > 0 %}
+  --http-idle-timeout {{ influxdb_service.http.timeouts.idle }} \
+      {% endif %}
+      {% if influxdb_service.http.timeouts.read_header is defined and
+            influxdb_service.http.timeouts.read_header | string | length > 0 %}
+  --http-read-header-timeout {{ influxdb_service.http.timeouts.read_header }} \
+      {% endif %}
+      {% if influxdb_service.http.timeouts.read is defined and
+            influxdb_service.http.timeouts.read | string | length > 0 %}
+  --http-read-timeout {{ influxdb_service.http.timeouts.read }} \
+      {% endif %}
+      {% if influxdb_service.http.timeouts.write is defined and
+            influxdb_service.http.timeouts.write | string | length > 0 %}
+  --http-write-timeout {{ influxdb_service.http.timeouts.write }} \
+      {% endif %}
+    {% endif %}
+  {% endif %}
+#}
+{% endif %}
+"
+{% endif %}
+{# --------------------------------------------------------------------------------------------------------- #}
+
+{% if influxdb_main_version | int == 3 %}
+OPTIONS="
+  serve \
+  {% if influxdb_service is defined %}
+    --node-id {{ influxdb_service.instance_id }} \
+    --object-store {{ influxdb_service.object_store | default('file') }} \
+    --data-dir {{ influxdb_storage_dir }} \
+    {% if influxdb_service.auth.enabled is defined and
+          influxdb_service.auth.enabled | string | length > 0 and
+          not influxdb_service.auth.enabled %}
+    --without-auth \
+    {% endif %}
+    {% if influxdb_version is version_compare('3.1.0', '>=') %}
+    --disable-authz health,ping,metrics \
+    {% endif %}
+    --log-filter {{ influxdb_service.log.filter | default('info') }} \
+    {% if influxdb_service.log.format is defined and influxdb_service.log.format | string | length > 0 %}
+    --log-format {{ influxdb_service.log.format }} \
+    {% endif %}
+    {% if influxdb_service.log.destination is defined and influxdb_service.log.destination | string | length > 0 %}
+    --log-destination {{ influxdb_service.log.destination }} \
+    {% endif %}
+    {% if influxdb_service.http.bind_address is defined and influxdb_service.http.bind_address | string | length > 0 %}
+    --http-bind {{ influxdb_service.http.bind }} \
+    {% endif %}
+  {% endif %}
+"
+{% endif %}
+
+{#
+# /usr/local/bin/influxdb/2.4.0/influxd --help
+
+        Start up the daemon configured with flags/env vars/config file.
+
+        The order of precedence for config options are as follows (1 highest, 3 lowest):
+                1. flags
+                2. env vars
+                3. config file
+
+        A config file can be provided via the INFLUXD_CONFIG_PATH env var. If a file is
+        not provided via an env var, influxd will look in the current directory for a
+        config.{json|toml|yaml|yml} file. If one does not exist, then it will continue unchanged.
+
+Usage:
+  influxd [flags]
+  influxd [command]
+
+Available Commands:
+  downgrade    Downgrade metadata schema used by influxd to match the expectations of an older release
+  help         Help about any command
+  inspect      Commands for inspecting on-disk database data
+  recovery     Commands used to recover / regenerate operator access to the DB
+  run          Start the influxd server
+  upgrade      Upgrade a 1.x version of InfluxDB
+  version      Print the influxd server version
+
+Flags:
+      --assets-path string                                              override default assets by serving from a specific directory (developer mode)
+      --bolt-path string                                                path to boltdb database (default "/root/.influxdbv2/influxd.bolt")
+      --e2e-testing                                                     add /debug/flush endpoint to clear stores; used for end-to-end tests
+      --engine-path string                                              path to persistent engine files (default "/root/.influxdbv2/engine")
+      --feature-flags stringToString                                    feature flag overrides (default [])
+      --flux-log-enabled                                                enables detailed logging for flux queries
+      --hardening-enabled                                               enable hardening options (disallow private IPs within flux and templates HTTP requests)
+  -h, --help                                                            help for influxd
+      --http-bind-address string                                        bind address for the REST HTTP API (default ":8086")
+      --http-idle-timeout duration                                      max duration the server should keep established connections alive while waiting for new requests. Set to 0 for no timeout (default 3m0s)
+      --http-read-header-timeout duration                               max duration the server should spend trying to read HTTP headers for new requests. Set to 0 for no timeout (default 10s)
+      --http-read-timeout duration                                      max duration the server should spend trying to read the entirety of new requests. Set to 0 for no timeout
+      --http-write-timeout duration                                     max duration the server should spend on processing+responding to requests. Set to 0 for no timeout
+      --influxql-max-select-buckets int                                 The maximum number of group by time bucket a SELECT can create. A value of zero will max the maximum number of buckets unlimited.
+      --influxql-max-select-point int                                   The maximum number of points a SELECT can process. A value of 0 will make the maximum point count unlimited. This will only be checked every second so queries will not be aborted immediately when hitting the limit.
+      --influxql-max-select-series int                                  The maximum number of series a SELECT can run. A value of 0 will make the maximum series count unlimited.
+      --instance-id string                                              add an instance id for replications to prevent collisions and allow querying by edge node
+      --log-level Log-Level                                             supported log levels are debug, info, and error (default info)
+      --metrics-disabled                                                Don't expose metrics over HTTP at /metrics
+      --no-tasks                                                        disables the task scheduler
+      --pprof-disabled                                                  Don't expose debugging information over HTTP at /debug/pprof
+      --query-concurrency int32                                         the number of queries that are allowed to execute concurrently. Set to 0 to allow an unlimited number of concurrent queries (default 1024)
+      --query-initial-memory-bytes int                                  the initial number of bytes allocated for a query when it is started. If this is unset, then query-memory-bytes will be used
+      --query-max-memory-bytes int                                      the maximum amount of memory used for queries. Can only be set when query-concurrency is limited. If this is unset, then this number is query-concurrency * query-memory-bytes
+      --query-memory-bytes int                                          maximum number of bytes a query is allowed to use at any given time. This must be greater or equal to query-initial-memory-bytes
+      --query-queue-size int32                                          the number of queries that are allowed to be awaiting execution before new queries are rejected. Must be > 0 if query-concurrency is not unlimited (default 1024)
+      --reporting-disabled                                              disable sending telemetry data to https://telemetry.influxdata.com every 8 hours
+      --secret-store string                                             data store for secrets (bolt or vault) (default "bolt")
+      --session-length int                                              ttl in minutes for newly created sessions (default 60)
+      --session-renew-disabled                                          disables automatically extending session ttl on request
+      --sqlite-path string                                              path to sqlite database. if not set, sqlite database will be stored in the bolt-path directory as "influxd.sqlite".
+      --storage-cache-max-memory-size Size                              The maximum size a shard's cache can reach before it starts rejecting writes. (default 1.0 GiB)
+      --storage-cache-snapshot-memory-size Size                         The size at which the engine will snapshot the cache and write it to a TSM file, freeing up memory. (default 25 MiB)
+      --storage-cache-snapshot-write-cold-duration Duration             The length of time at which the engine will snapshot the cache and write it to a new TSM file if the shard hasn't received writes or deletes. (default 10m0s)
+      --storage-compact-full-write-cold-duration Duration               The duration at which the engine will compact all TSM files in a shard if it hasn't received a write or delete. (default 4h0m0s)
+      --storage-compact-throughput-burst Size                           The rate limit in bytes per second that we will allow TSM compactions to write to disk. (default 48 MiB)
+      --storage-max-concurrent-compactions int                          The maximum number of concurrent full and level compactions that can run at one time.  A value of 0 results in 50% of runtime.GOMAXPROCS(0) used at runtime.  Any number greater than 0 limits compactions to that value.  This setting does not apply to cache snapshotting.
+      --storage-max-index-log-file-size Size                            The threshold, in bytes, when an index write-ahead log file will compact into an index file. Lower sizes will cause log files to be compacted more quickly and result in lower heap usage at the expense of write throughput. (default 1.0 MiB)
+      --storage-no-validate-field-size                                  Skip field-size validation on incoming writes.
+      --storage-retention-check-interval Duration                       The interval of time when retention policy enforcement checks run. (default 30m0s)
+      --storage-series-file-max-concurrent-snapshot-compactions int     The maximum number of concurrent snapshot compactions that can be running at one time across all series partitions in a database.
+      --storage-series-id-set-cache-size int                            The size of the internal cache used in the TSI index to store previously calculated series results.
+      --storage-shard-precreator-advance-period Duration                The default period ahead of the endtime of a shard group that its successor group is created. (default 30m0s)
+      --storage-shard-precreator-check-interval Duration                The interval of time when the check to pre-create new shards runs. (default 10m0s)
+      --storage-tsm-use-madv-willneed                                   Controls whether we hint to the kernel that we intend to page in mmap'd sections of TSM files.
+      --storage-validate-keys                                           Validates incoming writes to ensure keys only have valid unicode characters.
+      --storage-wal-fsync-delay Duration                                The amount of time that a write will wait before fsyncing. A duration greater than 0 can be used to batch up multiple fsync calls. This is useful for slower disks or when WAL write contention is seen. (default 0s)
+      --storage-wal-max-concurrent-writes int                           The max number of writes that will attempt to write to the WAL at a time. (default <nprocs> * 2)
+      --storage-wal-max-write-delay storage-wal-max-concurrent-writes   The max amount of time a write will wait when the WAL already has storage-wal-max-concurrent-writes active writes. Set to 0 to disable the timeout. (default 10m0s)
+      --storage-write-timeout duration                                  The max amount of time the engine will spend completing a write request before cancelling with a timeout. (default 10s)
+      --store string                                                    backing store for REST resources (disk or memory) (default "disk")
+      --testing-always-allow-setup                                      ensures the /api/v2/setup endpoint always returns true to allow onboarding
+      --tls-cert string                                                 TLS certificate for HTTPs
+      --tls-key string                                                  TLS key for HTTPs
+      --tls-min-version string                                          Minimum accepted TLS version (default "1.2")
+      --tls-strict-ciphers                                              Restrict accept ciphers to: ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, ECDHE_RSA_WITH_AES_128_GCM_SHA256, ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, ECDHE_RSA_WITH_AES_256_GCM_SHA384, ECDHE_ECDSA_WITH_CHACHA20_POLY1305, ECDHE_RSA_WITH_CHACHA20_POLY1305
+      --tracing-type string                                             supported tracing types are log, jaeger
+      --ui-disabled                                                     Disable the InfluxDB UI
+      --vault-addr string                                               address of the Vault server expressed as a URL and port, for example: https://127.0.0.1:8200/.
+      --vault-cacert string                                             path to a PEM-encoded CA certificate file on the local disk. This file is used to verify the Vault server's SSL certificate. This environment variable takes precedence over VAULT_CAPATH.
+      --vault-capath string                                             path to a directory of PEM-encoded CA certificate files on the local disk. These certificates are used to verify the Vault server's SSL certificate.
+      --vault-client-cert string                                        path to a PEM-encoded client certificate on the local disk. This file is used for TLS communication with the Vault server.
+      --vault-client-key string                                         path to an unencrypted, PEM-encoded private key on disk which corresponds to the matching client certificate.
+      --vault-client-timeout duration                                   timeout variable. The default value is 60s.
+      --vault-max-retries int                                           maximum number of retries when a 5xx error code is encountered. The default is 2, for three total attempts. Set this to 0 or less to disable retrying.
+      --vault-skip-verify                                               do not verify Vault's presented certificate before communicating with it. Setting this variable is not recommended and voids Vault's security model.
+      --vault-tls-server-name string                                    name to use as the SNI host when connecting via TLS.
+      --vault-token string                                              vault authentication token
+
+Use "influxd [command] --help" for more information about a command.
+#}
+
+{#
+# /opt/influxd/3.0.0/influxdb3 --help
+InfluxDB 3 Core Server and Command Line Tools
+
+# Example to run the InfluxDB 3 Core server:
+  influxdb3 serve --node-id my_node_name --object-store file --data-dir ~/.influxdb3_data
+
+Usage: influxdb3 [OPTIONS] [COMMAND]
+
+Common Commands:
+  serve     Run the InfluxDB 3 Core server
+  query, q  Perform a query against a running InfluxDB 3 Core server
+  write, w  Perform a set of writes to a running InfluxDB 3 Core server
+
+Resource Management:
+  create    Create a resource such as a database or auth token
+  show      List resources on the InfluxDB 3 Core server
+  delete    Delete a resource such as a database or table
+  enable    Enable a resource such as a trigger
+  disable   Disable a resource such as a trigger
+
+System Management:
+  install   Install Python packages for the Processing Engine
+  test      Test that Processing Engine plugins work the way you expect
+
+Common Options:
+  -h, --help        Print help information
+  -V, --version     Print version information
+
+Advanced Help Options:
+  Use --help-all to see runtime configuration options
+
+# ---------------------------------------------------------------------------------------------------------
+
+# /opt/influxd/3.0.0/influxdb3 serve --help-all
+Run the InfluxDB 3 Core server
+
+Examples:
+  # Run with local file storage:
+  1. influxdb3 serve --node-id node1 --object-store file --data-dir ~/.influxdb_data
+  2. influxdb3 create token --admin
+  3. Write and query with unhashed token
+
+  # Run with AWS S3:
+  1. influxdb3 serve --node-id node1 --object-store s3 --bucket influxdb-data \
+    --aws-access-key-id KEY --aws-secret-access-key SECRET
+  2. influxdb3 create token --admin
+  3. Write and query with unhashed token
+
+Usage: influxdb3 serve [OPTIONS] --node-id <NODE_IDENTIFIER_PREFIX>
+
+Required:
+  --node-id <NODE_ID>              Node identifier used as prefix in object store file paths
+                                  [env: INFLUXDB3_NODE_IDENTIFIER_PREFIX=]
+
+Common Options:
+  --http-bind <ADDR>               Address for HTTP API requests [default: 0.0.0.0:8181]
+                                  [env: INFLUXDB3_HTTP_BIND_ADDR=]
+  --log-filter <FILTER>            Logs: filter directive [env: LOG_FILTER=]
+  --without-auth                   Run InfluxDB 3 server without authorization
+
+Storage Options:
+  --object-store <STORE>           Object storage to use [default: memory]
+                                  [possible values: memory, memory-throttled, file, s3, google, azure]
+  --data-dir <DIR>                 Location to store files locally [env: INFLUXDB3_DB_DIR=]
+  --bucket <BUCKET>                Bucket name for cloud object storage [env: INFLUXDB3_BUCKET=]
+  --gen1-duration <DURATION>       Duration for Parquet file arrangement [default: 10m]
+                                  [env: INFLUXDB3_GEN1_DURATION=]
+
+AWS S3 Storage:
+  --aws-access-key-id <KEY>        S3 access key ID [env: AWS_ACCESS_KEY_ID=] [default: ]
+  --aws-secret-access-key <KEY>    S3 secret access key [env: AWS_SECRET_ACCESS_KEY=] [default: ]
+  --aws-default-region <REGION>    S3 region [default: us-east-1] [env: AWS_DEFAULT_REGION=]
+  --aws-endpoint <ENDPOINT>        S3 compatibility endpoint [env: AWS_ENDPOINT=]
+  --aws-session-token <TOKEN>      S3 session token for federated login/SSO [env: AWS_SESSION_TOKEN=]
+  --aws-allow-http                 Allow unencrypted HTTP to AWS [env: AWS_ALLOW_HTTP=]
+  --aws-skip-signature             Skip request signing [env: AWS_SKIP_SIGNATURE=]
+
+Google Cloud Storage:
+  --google-service-account <PATH>  Path to Google credentials JSON [env: GOOGLE_SERVICE_ACCOUNT=]
+
+Azure Blob Storage:
+  --azure-storage-account <ACCT>   Azure storage account name [env: AZURE_STORAGE_ACCOUNT=]
+  --azure-storage-access-key <KEY> Azure storage access key [env: AZURE_STORAGE_ACCESS_KEY=]
+
+Processing Engine Options:
+  --plugin-dir <DIR>               Location of plugins [env: INFLUXDB3_PLUGIN_DIR=]
+  --virtual-env-location <PATH>    [env: VIRTUAL_ENV=/Users/peterbarnett/Development/testing]
+  --package-manager <MANAGER>      [default: discover] [possible values: discover, pip, uv]
+
+Object Store Connection:
+  --object-store-connection-limit <LIMIT>
+                                  Connection limit for network object stores [default: 16]
+                                  [env: OBJECT_STORE_CONNECTION_LIMIT=]
+  --object-store-http2-only        Force HTTP/2 for object stores [env: OBJECT_STORE_HTTP2_ONLY=]
+  --object-store-http2-max-frame-size <SIZE>
+                                  HTTP/2 max frame size [env: OBJECT_STORE_HTTP2_MAX_FRAME_SIZE=]
+  --object-store-max-retries <N>   Max request retry attempts [env: OBJECT_STORE_MAX_RETRIES=]
+  --object-store-retry-timeout <TIMEOUT>
+                                  Max retry timeout [env: OBJECT_STORE_RETRY_TIMEOUT=]
+  --object-store-cache-endpoint <ENDPOINT>
+                                  S3 compatible cache endpoint [env: OBJECT_STORE_CACHE_ENDPOINT=]
+
+Network Options:
+  --max-http-request-size <SIZE>   Maximum size of HTTP requests [default: 10485760]
+                                  [env: INFLUXDB3_MAX_HTTP_REQUEST_SIZE=]
+  --bearer-token <TOKEN>           Bearer token for requests [env: INFLUXDB3_BEARER_TOKEN=]
+
+Memory Management:
+  --exec-mem-pool-bytes <SIZE>     Memory pool size for query execution [default: 20%]
+                                  [env: INFLUXDB3_EXEC_MEM_POOL_BYTES=]
+  --parquet-mem-cache-size <SIZE>  In-memory Parquet cache size [default: 20%]
+                                  [env: INFLUXDB3_PARQUET_MEM_CACHE_SIZE=]
+  --disable-parquet-mem-cache      Disable in-memory Parquet cache [env: INFLUXDB3_DISABLE_PARQUET_MEM_CACHE=]
+  --force-snapshot-mem-threshold <THRESH>
+                                  Internal buffer threshold [default: 50%]
+                                  [env: INFLUXDB3_FORCE_SNAPSHOT_MEM_THRESHOLD=]
+  --parquet-mem-cache-prune-percentage <PCT>
+                                  Percentage to prune from cache [default: 0.1]
+                                  [env: INFLUXDB3_PARQUET_MEM_CACHE_PRUNE_PERCENTAGE=]
+  --parquet-mem-cache-prune-interval <INTERVAL>
+                                  Cache prune check interval [default: 1s]
+                                  [env: INFLUXDB3_PARQUET_MEM_CACHE_PRUNE_INTERVAL=]
+  --parquet-mem-cache-query-path-duration <DURATION>
+                                  Duration to check for query path caching [default: 5h]
+                                  [env: INFLUXDB3_PARQUET_MEM_CACHE_QUERY_PATH_DURATION=]
+
+WAL Configuration:
+  --wal-flush-interval <INTERVAL>  Interval to flush data to WAL file [default: 1s]
+                                  [env: INFLUXDB3_WAL_FLUSH_INTERVAL=]
+  --wal-snapshot-size <SIZE>       Number of WAL files per snapshot [default: 600]
+                                  [env: INFLUXDB3_WAL_SNAPSHOT_SIZE=]
+  --wal-max-write-buffer-size <SIZE>
+                                  Max write requests in buffer [default: 100000]
+                                  [env: INFLUXDB3_WAL_MAX_WRITE_BUFFER_SIZE=]
+  --snapshotted-wal-files-to-keep <N>
+                                  Number of snapshotted WAL files to retain [default: 300]
+                                  [env: INFLUXDB3_NUM_WAL_FILES_TO_KEEP=]
+
+Cache Options:
+  --last-cache-eviction-interval <INTERVAL>
+                                  Last-N-Value cache eviction interval [default: 10s]
+                                  [env: INFLUXDB3_LAST_CACHE_EVICTION_INTERVAL=]
+  --distinct-cache-eviction-interval <INTERVAL>
+                                  Distinct Value cache eviction interval [default: 10s]
+                                  [env: INFLUXDB3_DISTINCT_CACHE_EVICTION_INTERVAL=]
+  --query-log-size <SIZE>          Size of the query log [default: 1000]
+                                  [env: INFLUXDB3_QUERY_LOG_SIZE=]
+  --query-file-limit <LIMIT>       Max parquet files allowed in a query
+                                  [env: INFLUXDB3_QUERY_FILE_LIMIT=]
+
+Datafusion Configuration:
+  --datafusion-num-threads <N>     Max DataFusion runtime threads
+                                  [env: INFLUXDB3_DATAFUSION_NUM_THREADS=]
+  --datafusion-runtime-type <TYPE> DataFusion runtime type [default: multi-thread]
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_TYPE=]
+                                  [possible values: current-thread, multi-thread, multi-thread-alt]
+  --datafusion-max-parquet-fanout <N>
+                                  Parquet file fanout limit [default: 1000]
+                                  [env: INFLUXDB3_DATAFUSION_MAX_PARQUET_FANOUT=]
+  --datafusion-use-cached-parquet-loader
+                                  Use cached parquet loader
+                                  [env: INFLUXDB3_DATAFUSION_USE_CACHED_PARQUET_LOADER=]
+  --datafusion-config <CONFIG>     Custom DataFusion configuration [default: ]
+                                  [env: INFLUXDB3_DATAFUSION_CONFIG=]
+  --datafusion-runtime-disable-lifo-slot <BOOL>
+                                  Disable LIFO slot [possible values: true, false]
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_DISABLE_LIFO_SLOT=]
+  --datafusion-runtime-event-interval <N>
+                                  Scheduler ticks for polling external events
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_EVENT_INTERVAL=]
+  --datafusion-runtime-global-queue-interval <N>
+                                  Scheduler ticks for polling global task queue
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_GLOBAL_QUEUE_INTERVAL=]
+  --datafusion-runtime-max-blocking-threads <N>
+                                  Thread limit for DataFusion runtime
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_MAX_BLOCKING_THREADS=]
+  --datafusion-runtime-max-io-events-per-tick <N>
+                                  Max events per tick
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_MAX_IO_EVENTS_PER_TICK=]
+  --datafusion-runtime-thread-keep-alive <DURATION>
+                                  Blocking pool thread timeout
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_THREAD_KEEP_ALIVE=]
+  --datafusion-runtime-thread-priority <PRIORITY>
+                                  Thread priority [default: 10]
+                                  [env: INFLUXDB3_DATAFUSION_RUNTIME_THREAD_PRIORITY=]
+
+Logging and Tracing:
+  --log-destination <DEST>         Logs: destination [default: stdout]
+                                  [env: LOG_DESTINATION=]
+  --log-format <FORMAT>            Logs: message format [default: full]
+                                  [env: LOG_FORMAT=]
+  --traces-exporter <TYPE>         Tracing: exporter type [default: none]
+                                  [env: TRACES_EXPORTER=]
+  --traces-exporter-jaeger-agent-host <HOST>
+                                  Jaeger agent hostname [default: 0.0.0.0]
+                                  [env: TRACES_EXPORTER_JAEGER_AGENT_HOST=]
+  --traces-exporter-jaeger-agent-port <PORT>
+                                  Jaeger agent port [default: 6831]
+                                  [env: TRACES_EXPORTER_JAEGER_AGENT_PORT=]
+  --traces-exporter-jaeger-service-name <NAME>
+                                  Jaeger service name [default: iox-conductor]
+                                  [env: TRACES_EXPORTER_JAEGER_SERVICE_NAME=]
+  --traces-exporter-jaeger-trace-context-header-name <NAME>
+                                  Header for trace context [default: uber-trace-id]
+                                  [env: TRACES_EXPORTER_JAEGER_TRACE_CONTEXT_HEADER_NAME=]
+  --traces-jaeger-debug-name <NAME>
+                                  Header for force sampling [default: jaeger-debug-id]
+                                  [env: TRACES_EXPORTER_JAEGER_DEBUG_NAME=]
+  --traces-jaeger-tags <TAGS>      Key-value pairs for tracing spans
+                                  [env: TRACES_EXPORTER_JAEGER_TAGS=]
+  --traces-jaeger-max-msgs-per-second <N>
+                                  Max messages per second [default: 1000]
+                                  [env: TRACES_JAEGER_MAX_MSGS_PER_SECOND=]
+
+
+Additional Options:
+  -v, --verbose                    Increase logging verbosity
+  -h, --help                       Print help information
+  --help-all                       Show all available options
+
+#}
