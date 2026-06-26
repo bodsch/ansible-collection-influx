@@ -6,4 +6,4 @@
   become: false
 
   roles:
-    - role: ansible-telegraf
+    - role: bodsch.influx.telegraf

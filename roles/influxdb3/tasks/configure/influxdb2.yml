@@ -4,23 +4,22 @@
   when:
     - not running_in_check_mode
     - influxdb_main_version | int == 2
-  influxdb2_setup:
-    main_version: "{{ influxdb_main_version }}"
-    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+  bodsch.influx.influxdb2_setup:
+    host: "{{ influxdb_http }}"
     org: "{{ influxdb_primary.organization }}"
     bucket: "{{ influxdb_primary.bucket }}"
     username: "{{ influxdb_primary.username }}"
     password: "{{ influxdb_primary.password }}"
     token: "{{ influxdb_primary.token }}"
-    force: true
   register: _setup
 
 - name: ensure organizations exists
   when:
     - not running_in_check_mode
     - influxdb_main_version | int == 2
-  influxdb2_organizations:
-    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+  bodsch.influx.influxdb2_organizations:
+    host: "{{ influxdb_http }}"
+    token: "{{ influxdb_primary.token }}"
     organizations: "{{ influxdb_organizations }}"
   register: _org
 
@@ -28,8 +27,9 @@
   when:
     - not running_in_check_mode
     - influxdb_main_version | int == 2
-  influxdb2_users:
-    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+  bodsch.influx.influxdb2_users:
+    host: "{{ influxdb_http }}"
+    token: "{{ influxdb_primary.token }}"
     users: "{{ influxdb_users }}"
   register: _users
 
@@ -37,8 +37,9 @@
   when:
     - not running_in_check_mode
     - influxdb_main_version | int == 2
-  influxdb2_buckets:
-    host: "{{ influxdb_http }}" # "http://127.0.0.1:8086"
+  bodsch.influx.influxdb2_buckets:
+    host: "{{ influxdb_http }}"
+    token: "{{ influxdb_primary.token }}"
     buckets: "{{ influxdb_buckets }}"
   register: _buckets
 

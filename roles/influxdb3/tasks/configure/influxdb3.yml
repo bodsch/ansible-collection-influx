@@ -3,17 +3,21 @@
 - name: create operator token
   when:
     - not running_in_check_mode
-  influxdb3_token:
+  bodsch.influx.influxdb3_token:
     version: "{{ influxdb_version }}"
     host: "{{ influxdb_http }}"
-    auth_enabled: "{{ influxdb_service.auth.enabled | default('false') | bool }}"
+    auth_enabled: "{{ influxdb_service.auth.enabled | default(false) | bool }}"
+    token_file: "{{ influxdb_config_dir }}/operator.token"
   register: _operator
 
-- name: create operator token
+- name: ensure databases exist
   when:
     - not running_in_check_mode
-  influxdb3_token:
-    version: "{{ influxdb_version }}"
+    - influxdb_databases | default({}) | length > 0
+  bodsch.influx.influxdb3_database:
     host: "{{ influxdb_http }}"
-    auth_enabled: "{{ influxdb_service.auth.enabled | default('false') | bool }}"
-  register: _operator
+    token: "{{ _operator.token | default(omit) }}"
+    databases: "{{ influxdb_databases }}"
+  register: _databases
+
+...

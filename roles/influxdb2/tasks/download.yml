@@ -11,21 +11,64 @@
       delegate_to: localhost
       become: false
       run_once: true
-      bodsch.scm.github_latest:
+      bodsch.scm.scm_release:
         project: influxdata
         repository: influxdb
         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
-        github_tags: "{{ influxdb_scm.use_tags | default('false') }}"
-        without_beta: "{{ influxdb_scm.without_beta | default('false') }}"
-        filter_elements: "{{ influxdb_scm.version_filter | default([]) }}"
-        cache: 320
       register: _latest_release
+
+    - name: d
+      ansible.builtin.debug:
+        msg: "{{ _latest_release }}"
 
     - name: re-define influxdb_version
       ansible.builtin.set_fact:
         influxdb_version: "{{ _latest_release.latest_release }}"
-        # influxdb_download_url: "https://api.github.com/repos/influxdata/influxdb/tarball/v{{ _latest_release.latest_release }}"
+
+
+
+- name: detect download informations
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: localhost
+  run_once: true
+  bodsch.influx.influx_download_data:
+    major_version: "{{ influxdb_main_version }}"
+    version: "{{ influxdb_version }}"
+  register: influx_downloads
+
+- name: d
+  ansible.builtin.debug:
+    msg: "{{ influx_downloads }}"
+
+# - name: get latest release
+#   delegate_to: localhost
+#   become: false
+#   run_once: true
+#   when:
+#     - influxdb_version == "latest"
+#   block:
+#     - name: get latest release
+#       delegate_to: localhost
+#       become: false
+#       run_once: true
+#       bodsch.scm.github_latest:
+#         project: influxdata
+#         repository: influxdb
+#         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+#         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+#         github_tags: "{{ influxdb_scm.use_tags | default('false') }}"
+#         without_beta: "{{ influxdb_scm.without_beta | default('false') }}"
+#         filter_elements: "{{ influxdb_scm.version_filter | default([]) }}"
+#         cache: 320
+#       register: _latest_release
+
+#     - name: re-define influxdb_version
+#       ansible.builtin.set_fact:
+#         influxdb_version: "{{ _latest_release.latest_release }}"
+#         # influxdb_download_url: "https://api.github.com/repos/influxdata/influxdb/tarball/v{{ _latest_release.latest_release }}"
 
 # - name: define download information
 #   ansible.builtin.set_fact:
@@ -33,7 +76,7 @@
 
 - name: define delegate instance for download handling
   ansible.builtin.set_fact:
-    influxdb_delegate_to: "{{ ansible_host }}"
+    influxdb_delegate_to: "{{ ansible_facts.host }}"
     influxdb_local_tmp_directory: "{{
         lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
         default('/var/cache/ansible/influxdb', true) }}/{{ influxdb_version }}"
@@ -42,7 +85,7 @@
 
 - name: merge influxdb configuration between defaults and custom
   ansible.builtin.set_fact:
-    influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) | influxdb_fix_release(influxdb_version=influxdb_version, version='2.7.1') }}"
+    influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) | bodsch.influx.influxdb_fix_release(influxdb_version=influxdb_version, version='2.7.1') }}"
 
 #- name: fix release filename for influxdb archive
 #  ansible.builtin.set_fact:

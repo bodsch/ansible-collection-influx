@@ -1,6 +1,6 @@
 ---
 
-- name: include OS specific configuration ({{ ansible_distribution }} ({{ ansible_os_family }}) {{ ansible_distribution_major_version }})
+- name: include OS specific configuration ({{ ansible_facts.distribution }} ({{ ansible_facts.os_family }}) {{ ansible_facts.distribution_major_version }})
   ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
     params:
@@ -8,15 +8,15 @@
         - "vars"
       files:
         # eg. debian-10 / ubuntu-20.04 / centos-8 / oraclelinux-8
-        - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}.yml"
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.distribution_major_version }}.yml"
         # eg. archlinux-systemd / archlinux-openrc
-        - "{{ ansible_distribution | lower }}-{{ ansible_service_mgr | lower }}.yml"
+        - "{{ ansible_facts.distribution | lower }}-{{ ansible_facts.service_mgr | lower }}.yml"
         # eg. debian / ubuntu / centos / oraclelinux
-        - "{{ ansible_distribution | lower }}.yml"
+        - "{{ ansible_facts.distribution | lower }}.yml"
         # eg. redhat / debian / archlinux
-        - "{{ ansible_os_family | lower }}.yml"
+        - "{{ ansible_facts.os_family | lower }}.yml"
         # artixlinux
-        - "{{ ansible_os_family | lower | replace(' ', '') }}.yml"
+        - "{{ ansible_facts.os_family | lower | replace(' ', '') }}.yml"
         - default.yaml
       skip: true
 
@@ -26,7 +26,7 @@
 
 - name: define delegate instance for download handling
   ansible.builtin.set_fact:
-    telegraf_delegate_to: "{{ ansible_host }}"
+    telegraf_delegate_to: "{{ ansible_facts.host }}"
     telegraf_local_tmp_directory: "{{
         lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
         default('/var/cache/ansible/telegraf', true) }}/{{ telegraf_version }}"
@@ -51,7 +51,7 @@
       delegate_to: localhost
       become: false
       run_once: true
-      bodsch.scm.github_latest:
+      bodsch.scm.scm_release:
         project: influxdata
         repository: telegraf
         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
@@ -61,6 +61,21 @@
     - name: re-define telegraf_version
       ansible.builtin.set_fact:
         telegraf_version: "{{ _latest_release.latest_release }}"
+
+    # - name: get latest release
+      # delegate_to: localhost
+      # become: false
+      # run_once: true
+      # bodsch.scm.github_latest:
+        # project: influxdata
+        # repository: telegraf
+        # user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        # password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      # register: _latest_release
+#
+    # - name: re-define telegraf_version
+      # ansible.builtin.set_fact:
+        # telegraf_version: "{{ _latest_release.latest_release }}"
 
 # - name: latest release
 #   when:
@@ -88,7 +103,7 @@
 #       ansible.builtin.set_fact:
 #         telegraf_version: "{{ _latest_release.json.tag_name[1:] }}"
 
-- name: detect our installation path '{{ telegraf_install_path | dirname }}'
+- name: detect our installation path '{{ bodsch.influx.telegraf_install_path | dirname }}'
   ansible.builtin.stat:
     path: "{{ telegraf_install_path | dirname }}"
     get_checksum: false
@@ -115,7 +130,7 @@
         state: absent
         path: /etc/systemd/system/telegraf.service
       when:
-        - ansible_service_mgr | lower == "systemd"
+        - ansible_facts.service_mgr | lower == "systemd"
 
     - name: remove installed telegraf
       ansible.builtin.file:
@@ -136,7 +151,7 @@
   ansible.builtin.file:
     path: "{{ telegraf_local_tmp_directory }}"
     state: directory
-    mode: 0750
+    mode: "0750"
 
 - name: user and group handling
   when:
@@ -168,16 +183,16 @@
     state: directory
     owner: "{{ telegraf_system_user }}"
     group: "{{ telegraf_system_group }}"
-    mode: 0755
+    mode: "0755"
 
 - name: merge telegraf configuration between defaults and custom
   ansible.builtin.set_fact:
     telegraf_service: "{{ telegraf_defaults_service | combine(telegraf_service, recursive=True) }}"
     telegraf_config_agent: "{{ telegraf_defaults_config_agent | combine(telegraf_config_agent, recursive=True) }}"
-    telegraf_config_outputs: "{{ telegraf_defaults_config_outputs | union(telegraf_config_outputs) | telegraf_clean_list }}"
+    telegraf_config_outputs: "{{ telegraf_defaults_config_outputs | union(telegraf_config_outputs) | bodsch.influx.telegraf_clean_list }}"
     telegraf_config_inputs: "{{ telegraf_defaults_config_inputs | union(telegraf_config_inputs) }}"
     telegraf_config_processors: "{{ telegraf_defaults_config_processors | union(telegraf_config_processors) }}"
-    telegraf_config_aggregators: "{{ telegraf_defaults_config_aggregators | union(telegraf_config_aggregators) | telegraf_clean_list }}"
+    telegraf_config_aggregators: "{{ telegraf_defaults_config_aggregators | union(telegraf_config_aggregators) | bodsch.influx.telegraf_clean_list }}"
 
 - name: fail if no output defined
   ansible.builtin.fail:

@@ -21,7 +21,7 @@
     url: "{{ telegraf_release_download_url }}/{{ __telegraf_files.archive }}"
     dest: "{{ telegraf_local_tmp_directory }}/{{ __telegraf_files.archive }}"
     # checksum: "sha256:{{ __telegraf_checksum }}"
-    mode: 0640
+    mode: "0640"
   register: _download_archive
   until: _download_archive is succeeded
   retries: 5

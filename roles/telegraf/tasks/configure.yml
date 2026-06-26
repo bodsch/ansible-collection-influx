@@ -19,7 +19,7 @@
       ansible.builtin.file:
         state: touch
         path: "{{ telegraf_config_agent.logfile }}"
-        mode: 0660
+        mode: "0660"
         group: "{{ telegraf_system_group }}"
       when:
         - not telegraf_logfile.stat.exists or
@@ -39,7 +39,7 @@
     dest: "{{ telegraf_config_dir }}/telegraf.conf"
     owner: root
     group: "{{ telegraf_system_group }}"
-    mode: 0640
+    mode: "0640"
   notify:
     - validate config
     - reload telegraf

@@ -12,7 +12,7 @@
     {% if item.config is defined and
           item.config is iterable %}
       {% for k, v in item.config.items() %}
-        {% set result, value = v | telegraf_input_value %}
+        {% set result, value = v | bodsch.influx.telegraf_input_value %}
   {{ k }} = {{ value }}
       {% endfor %}
     {% endif %}
@@ -20,7 +20,7 @@
           item.tags is iterable %}
   [inputs.{{ item.plugin }}.tags]
       {% for k, v in item.tags.items() %}
-        {% set result, value = v | telegraf_input_value %}
+        {% set result, value = v | bodsch.influx.telegraf_input_value %}
     {{ k }} = {{ value }}
       {% endfor %}
     {% endif %}
@@ -29,7 +29,7 @@
   [inputs.{{ item.plugin }}.tagpass]
       {# must be an list! #}
       {% for k, v in item.tagpass.items() %}
-        {% set result, value = v | telegraf_input_value %}
+        {% set result, value = v | bodsch.influx.telegraf_input_value %}
     {{ k }} = {{ value }}
       {% endfor %}
     {% endif %}
@@ -38,7 +38,7 @@
   [inputs.{{ item.plugin }}.tagdrop]
       {# must be an list! #}
       {% for k, v in item.tagdrop.items() %}
-        {% set result, value = v | telegraf_input_value %}
+        {% set result, value = v | bodsch.influx.telegraf_input_value %}
     {{ k }} = {{ value }}
       {% endfor %}
     {% endif %}

@@ -34,16 +34,28 @@
     name: "{{ influxdb_release.binaries.core }}"
     state: started
 
-- name: ensure influxdb is up and running
+- name: ensure influxdb 2 is up and running
   when:
     - not running_in_check_mode
-  influx_ping:
-    main_version: "{{ influxdb_main_version }}"
+    - influxdb_main_version | int == 2
+  bodsch.influx.influxdb2_ping:
     host: "{{ influxdb_http }}"
   retries: 10
   delay: 5
   register: _ping
-  until: _ping.rc == 0
+  until: _ping.reachable
+  changed_when: false
+
+- name: ensure influxdb 3 is up and running
+  when:
+    - not running_in_check_mode
+    - influxdb_main_version | int == 3
+  bodsch.influx.influxdb3_ping:
+    host: "{{ influxdb_http }}"
+  retries: 10
+  delay: 5
+  register: _ping
+  until: _ping.reachable
   changed_when: false
 
 - name: influxdb2

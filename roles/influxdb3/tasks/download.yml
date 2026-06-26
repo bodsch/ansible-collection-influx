@@ -6,7 +6,7 @@
   become: false
   delegate_to: localhost
   run_once: true
-  influx_download_data:
+  bodsch.influx.influx_download_data:
     major_version: "{{ influxdb_main_version }}"
     version: "{{ influxdb_version }}"
   register: influx_downloads
@@ -17,37 +17,6 @@
     influxdb_download_artifact: "{{ influx_downloads.download_artifact }}"
     influxdb_download_url: "{{ influx_downloads.download_url }}"
     influxdb_download_checksum: "{{ influx_downloads.download_checksum }}"
-
-# - name: get latest release
-#   delegate_to: localhost
-#   become: false
-#   run_once: true
-#   when:
-#     - influxdb_version == "latest"
-#   block:
-#     - name: get latest release
-#       delegate_to: localhost
-#       become: false
-#       run_once: true
-#       bodsch.scm.github_latest:
-#         project: influxdata
-#         repository: influxdb
-#         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
-#         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
-#         github_tags: "{{ influxdb_scm.use_tags | default('false') }}"
-#         # without_beta: "{{ influxdb_scm.without_beta | default('false') }}"
-#         filter_elements: "{{ influxdb_scm.version_filter | default([]) }}"
-#         cache: 320
-#       register: _latest_release
-#
-#     - name: re-define influxdb_version
-#       ansible.builtin.set_fact:
-#         influxdb_version: "{{ _latest_release.latest_release | split('|') | first | trim }}"
-#         # influxdb_download_url: "https://api.github.com/repos/influxdata/influxdb/tarball/v{{ _latest_release.latest_release }}"
-
-# - name: define download information
-#   ansible.builtin.set_fact:
-#     influxdb_release: "{{ influxdb_defaults_release | combine(influxdb_release, recursive=True) | influxdb_release_filename(influxdb_version) }}"
 
 - name: define delegate instance for download handling
   when:

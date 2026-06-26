@@ -25,40 +25,42 @@
     state: started
 
 - name: ensure influxdb is up and running
-  influx_ping:
+  bodsch.influx.influxdb2_ping:
     host: "http://127.0.0.1:8086"
   retries: 10
   delay: 5
   register: _ping
-  until: _ping.rc == 0
+  until: _ping.reachable
   changed_when: false
 
 - name: set influxdb default user, organization, and bucket
-  influx_setup:
+  bodsch.influx.influxdb2_setup:
     host: "http://127.0.0.1:8086"
     org: "{{ influxdb_primary.organization }}"
     bucket: "{{ influxdb_primary.bucket }}"
     username: "{{ influxdb_primary.username }}"
     password: "{{ influxdb_primary.password }}"
     token: "{{ influxdb_primary.token }}"
-    force: true
   register: _setup
 
 - name: ensure organizations exists
-  influx_organizations:
+  bodsch.influx.influxdb2_organizations:
     host: "http://127.0.0.1:8086"
+    token: "{{ influxdb_primary.token }}"
     organizations: "{{ influxdb_organizations }}"
   register: _org
 
 - name: ensure users exist
-  influx_users:
+  bodsch.influx.influxdb2_users:
     host: "http://127.0.0.1:8086"
+    token: "{{ influxdb_primary.token }}"
     users: "{{ influxdb_users }}"
   register: _users
 
 - name: ensure buckets exist
-  influx_buckets:
+  bodsch.influx.influxdb2_buckets:
     host: "http://127.0.0.1:8086"
+    token: "{{ influxdb_primary.token }}"
     buckets: "{{ influxdb_buckets }}"
   register: _buckets
 

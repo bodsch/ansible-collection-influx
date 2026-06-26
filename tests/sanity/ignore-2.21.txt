@@ -1,0 +1,10 @@
+plugins/modules/influx_download_data.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb2_auth.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb2_buckets.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb2_organizations.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb2_ping.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb2_setup.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb2_users.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb3_database.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb3_ping.py validate-modules:missing-gplv3-license
+plugins/modules/influxdb3_token.py validate-modules:missing-gplv3-license

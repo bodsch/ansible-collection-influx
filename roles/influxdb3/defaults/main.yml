@@ -51,4 +51,7 @@ influxdb_users: {}
 
 influxdb_buckets: {}
 
+# InfluxDB 3 native databases (only used when influxdb_main_version == 3)
+influxdb_databases: {}
+
 ...

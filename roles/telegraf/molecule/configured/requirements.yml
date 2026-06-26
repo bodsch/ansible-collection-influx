@@ -1,10 +1,6 @@
 ---
 
-- name: influx2
-  src: https://github.com/bodsch/ansible-influxdb
-  version: 1.2.0
-
-- name: influx1
+- name: mkayontour.influxdb
   src: https://github.com/mkayontour/ansible-influxdb.git
   scm: git
 

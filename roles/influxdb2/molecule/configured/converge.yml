@@ -6,4 +6,4 @@
   become: false
 
   roles:
-    - role: ansible-influxdb
+    - role: bodsch.influx.influxdb2
