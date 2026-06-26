@@ -16,13 +16,16 @@
     group: "{{ influxdb_system_group }}"
     mode: "0644"
   notify:
-    - restart service
+    - restart influxdb2
 
 - name: ensure influxdb is started
   become: true
   ansible.builtin.service:
     name: influxdb
     state: started
+
+# TODO
+# define influxdb_url
 
 - name: ensure influxdb is up and running
   bodsch.influx.influxdb2_ping:

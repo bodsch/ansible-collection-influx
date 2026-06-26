@@ -13,7 +13,7 @@ OPTIONS="
         not influxdb_service.ui.enabled %}
   --ui-disabled \
   {% endif %}
-{#
+
   {% if influxdb_service.http is defined %}
     {% if influxdb_service.http.bind_address is defined and
           influxdb_service.http.bind_address | string | length > 0 %}
@@ -38,7 +38,7 @@ OPTIONS="
       {% endif %}
     {% endif %}
   {% endif %}
-#}
+
 {% endif %}
 "
 
