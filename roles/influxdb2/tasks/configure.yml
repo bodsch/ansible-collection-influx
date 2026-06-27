@@ -18,7 +18,7 @@
     dest: "{{ influxdb2_config_dir }}/config.yml"
     owner: root
     group: "{{ influxdb2_system_group }}"
-    mode: "0644"
+    mode: "0640"
   notify:
     - restart influxdb2
 

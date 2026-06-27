@@ -32,11 +32,11 @@ influxdb2_storage_dir: /var/lib/influxdb2
 
 influxdb2_direct_download: false
 
+# User-facing override for the influxd configuration. Merged (recursive) over
+# influxdb2_defaults_service (vars/main.yml) in tasks/prepare.yml and rendered into the
+# influxd config file (templates/etc/influxdb/config.yml.j2). See that catalogue for every
+# available option, its influxd config key and minimum version.
 influxdb2_service: {}
-
-influxdb2_config:
-  http-bind-address: 127.0.0.1:8086
-  reporting-disabled: true
 
 influxdb2_primary:
   organization: example-org

@@ -1,16 +1,19 @@
 #!/sbin/openrc-run
+# {{ ansible_managed }}
+#
+# OpenRC service for InfluxDB 2. influxd reads its configuration from the file referenced
+# by INFLUXD_CONFIG_PATH (exported below from ${config}); no CLI flags are passed.
 
 # Logging
 error_log="${error_log:-/var/log/influxdb/influxd.log}"
 output_log="${output_log:-/dev/null}"
 
-config="${config:-/etc/influxdb/config.yml}"
-influxd_opts=${influxd_opts:-}
+config="${config:-{{ influxdb2_config_dir }}/config.yml}"
+influxd_opts="${influxd_opts:-}"
 
 required_files="${config}"
 
-command=/usr/bin/influxd
-command_args_background="--background"
+command="/usr/bin/influxd"
 command_args="${influxd_opts}"
 command_user="${user}:${group}"
 
@@ -25,7 +28,7 @@ export INFLUXD_CONFIG_PATH="${config}"
 rc_ulimit="-n 65536"
 
 start_pre() {
-  # Check if config file exist
+  # influxd is configured via the config file; make sure it exists.
   if [ ! -r "${config}" ]
   then
     eerror "config file ${config} doesn't exist"
@@ -56,6 +59,3 @@ then
     influx ping --host ${INFLUXDB_HEALTHCHECK}
   }
 fi
-
-
-

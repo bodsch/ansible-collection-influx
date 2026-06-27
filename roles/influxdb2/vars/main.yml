@@ -48,16 +48,16 @@ influxdb2_defaults_service:
       write: ""
 
   tls:
-    # TLS certificate for HTTPs
+    # tls-cert - TLS certificate for HTTPs
     cert: ""
-    # TLS key for HTTPs
+    # tls-key - TLS key for HTTPs
     key: ""
-    # Minimum accepted TLS version (default "1.2")
-    min-version: ""
-    # Restrict accept ciphers to:
+    # tls-min-version - Minimum accepted TLS version (default "1.2")
+    min_version: ""
+    # tls-strict-ciphers - Restrict accepted ciphers to a hardened set (boolean):
     #   ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, ECDHE_RSA_WITH_AES_128_GCM_SHA256, ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
     #   ECDHE_RSA_WITH_AES_256_GCM_SHA384, ECDHE_ECDSA_WITH_CHACHA20_POLY1305, ECDHE_RSA_WITH_CHACHA20_POLY1305
-    strict-ciphers: []
+    strict_ciphers: false
 
   influxql:
     # The maximum number of group by time bucket a SELECT can create.
@@ -129,6 +129,8 @@ influxdb2_defaults_service:
     wal_max_concurrent_writes: ""
     # The max amount of time a write will wait when the WAL already has storage-wal-max-concurrent-writes active writes. Set to 0 to disable the timeout. (default 10m0s)
     wal_max_write_delay: ""
+    # storage-wal-flush-on-shutdown - Flush the WAL on shutdown (boolean). (since 2.7.11)
+    wal_flush_on_shutdown: false
     # The max amount of time the engine will spend completing a write request before cancelling with a timeout. (default 10s)
     write_timeout: ""
 
@@ -155,6 +157,54 @@ influxdb2_defaults_service:
     vault_tls_server_name: ""
     # vault authentication token
     vault_token: ""
+
+  # telemetry / reporting
+  reporting:
+    # reporting-disabled - disable sending telemetry data to telemetry.influxdata.com.
+    # Role default: telemetry disabled.
+    disabled: true
+
+  # general / server daemon options
+  server:
+    # no-tasks - disable the task scheduler (boolean)
+    no_tasks: false
+    # pprof-disabled - don't expose debugging information over HTTP at /debug/pprof (boolean)
+    pprof_disabled: false
+    # flux-log-enabled - enable detailed logging for flux queries (boolean)
+    flux_log_enabled: false
+    # hardening-enabled - disallow private IPs within flux and templates HTTP requests (boolean) (since 2.2.0)
+    hardening_enabled: false
+    # secret-store - data store for secrets (bolt or vault)
+    secret_store: ""
+    # session-length - TTL in minutes for newly created sessions
+    session_length: ""
+    # session-renew-disabled - disable automatically extending session TTL on request (boolean)
+    session_renew_disabled: false
+    # tracing-type - supported tracing types are log, jaeger
+    tracing_type: ""
+    # store - backing store for REST resources (disk or memory)
+    store: ""
+    # strong-passwords - enforce password complexity (boolean) (since 2.7.6)
+    strong_passwords: false
+    # feature-flags - feature flag overrides (mapping of name: value)
+    feature_flags: {}
+    # pid-file - write a PID file to this path (since 2.7.11)
+    pid_file: ""
+    # overwrite-pid-file - overwrite an existing PID file (boolean) (since 2.7.11)
+    overwrite_pid_file: false
+    # testing-always-allow-setup - always allow the /api/v2/setup endpoint (boolean, dev/test)
+    testing_always_allow_setup: false
+
+  # on-disk paths (leave empty to keep influxd defaults under the storage dir)
+  paths:
+    # bolt-path - path to the BoltDB database
+    bolt: ""
+    # engine-path - path to persistent engine files
+    engine: ""
+    # sqlite-path - path to the SQLite database (defaults to the bolt-path directory)
+    sqlite: ""
+    # assets-path - override default UI assets (developer mode)
+    assets: ""
 
 # ----------------------------------------------------------------------------------------
 
