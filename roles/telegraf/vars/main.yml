@@ -80,13 +80,22 @@ telegraf_defaults_config_agent:
   ## Log only error level messages.
   quiet: false
 
-  ## Log target controls the destination for logs and can be one of "file",
+  ## logtarget controls the destination for logs and can be one of "file",
   ## "stderr" or, on Windows, "eventlog".  When set to "file", the output file
   ## is determined by the "logfile" setting.
+  ## DEPRECATED since 1.32 (removed in 1.40): use "logformat" + "logfile" instead.
+  ## Only emitted for telegraf < 1.32.
   logtarget: "file"
 
-  ## Name of the file to be logged to when using the "file" logtarget.  If set to
-  ## the empty string then logs are written to stderr.
+  ## logformat controls the way messages are logged: "text", "structured" or,
+  ## on Windows, "eventlog". Replaces logtarget. (since 1.32)
+  logformat: ""
+
+  ## Message key for structured logs (only with logformat = "structured"). (since 1.33)
+  structured_log_message_key: ""
+
+  ## Name of the file to be logged to. If set to the empty string then logs are
+  ## written to stderr. (destination selector for all versions)
   logfile: "/var/log/telegraf.log"
 
   ## The logfile will be rotated after the time interval specified.  When set
@@ -115,6 +124,32 @@ telegraf_defaults_config_agent:
   ## translates by calling external programs snmptranslate and snmptable,
   ## or "gosmi" which translates using the built-in gosmi library.
   snmp_translator: "netsnmp"
+
+  ## Name of the file to load/store the state of stateful plugins. (since 1.26)
+  statefile: ""
+
+  ## Always keep tags explicitly defined in the plugin itself and ensure those
+  ## tags always pass filtering. (boolean) (since 1.27)
+  always_include_local_tags: false
+
+  ## Always keep tags explicitly defined in the global tags section and ensure
+  ## those tags always pass filtering. (boolean) (since 1.28)
+  always_include_global_tags: false
+
+  ## Skip running processors after aggregators (tri-state: leave empty to keep the
+  ## telegraf default of running processors a second time). (since 1.30)
+  skip_processors_after_aggregators: ""
+
+  ## Number of attempts to obtain a remote configuration via a URL during startup.
+  ## Set to -1 for unlimited attempts. (since 1.31)
+  config_url_retry_attempts: ""
+
+  ## Metric buffer strategy per output: "memory" or "disk_write_through" (alias "disk"). (since 1.32)
+  buffer_strategy: ""
+  ## Directory to store disk-backed buffer files (with buffer_strategy = disk_write_through). (since 1.32)
+  buffer_directory: ""
+  ## Control write durability for the "disk" buffer strategy (tri-state). (since 1.38)
+  buffer_disk_sync: ""
 
 telegraf_defaults_config_outputs:
   - type: influxdb_v2

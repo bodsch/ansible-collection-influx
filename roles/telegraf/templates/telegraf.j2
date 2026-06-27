@@ -29,6 +29,17 @@ OPTIONS="
       telegraf_service.quiet %}
   --quiet \
 {% endif %}
+{% if telegraf_service.raw_flags is defined and telegraf_service.raw_flags is mapping %}
+  {% for key, value in telegraf_service.raw_flags.items() %}
+    {% if value is boolean %}
+      {% if value %}
+  --{{ key }} \
+      {% endif %}
+    {% elif value | string | length > 0 %}
+  --{{ key }} {{ value }} \
+    {% endif %}
+  {% endfor %}
+{% endif %}
   --config {{ telegraf_service.config.file }} \
   --config-directory {{ telegraf_service.config.directory }} \
 "

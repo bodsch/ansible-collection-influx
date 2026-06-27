@@ -1,9 +1,9 @@
 ---
 
 - name: handle logfile
+  # logfile is the destination selector for all telegraf versions (empty = stderr);
+  # logtarget was deprecated in 1.32 in favour of logformat + logfile.
   when:
-    - telegraf_config_agent.logtarget is defined
-    - telegraf_config_agent.logtarget == "file"
     - telegraf_config_agent.logfile is defined
     - telegraf_config_agent.logfile | string | length > 0
   block:

@@ -15,6 +15,10 @@ telegraf_direct_download: false
 
 telegraf_service: {}
 
+# Global tags applied to every metric ([global_tags] section); key: value pairs.
+# Values may reference environment variables, e.g. { dc: us-east-1, user: "$USER" }.
+telegraf_global_tags: {}
+
 telegraf_config_agent: {}
 telegraf_config_outputs: []
 telegraf_config_inputs: []
