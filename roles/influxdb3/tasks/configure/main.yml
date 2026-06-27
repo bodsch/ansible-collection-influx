@@ -2,73 +2,52 @@
 
 - name: define influxdb http service
   ansible.builtin.set_fact:
-    influxdb_http: "{{ influxdb_service.http | influxdb_bind(core_version=influxdb_main_version) }}"
+    influxdb3_http: "{{ influxdb3_service.http | bodsch.influx.influxdb_bind(core_version=influxdb3_main_version) }}"
 
-- name: create influxdb config directory
-  when:
-    - not running_in_check_mode
-  ansible.builtin.file:
-    path: "{{ influxdb_config_dir }}"
-    state: directory
-    owner: "{{ influxdb_system_user }}"
-    group: root
-    mode: "0755"
+# - name: create influxdb config directory
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.file:
+#     path: "{{ influxdb3_config_dir }}"
+#     state: directory
+#     owner: "{{ influxdb3_system_user }}"
+#     group: root
+#     mode: "0755"
+#
+# - name: create influxdb configuration
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.template:
+#     src: etc/influxdb/config.yml.j2
+#     dest: "{{ influxdb3_config_dir }}/config.yml"
+#     owner: root
+#     group: "{{ influxdb3_system_group }}"
+#     mode: "0644"
+#   notify:
+#     - restart influxdb3
 
-- name: create influxdb configuration
-  when:
-    - not running_in_check_mode
-  ansible.builtin.template:
-    src: etc/influxdb/config.yml.j2
-    dest: "{{ influxdb_config_dir }}/config.yml"
-    owner: root
-    group: "{{ influxdb_system_group }}"
-    mode: "0644"
-  notify:
-    - restart service
-
-- name: ensure {{ influxdb_release.binaries.core }} is started
+- name: ensure influxdb3 is started
   when:
     - not running_in_check_mode
   become: true
   ansible.builtin.service:
-    name: "{{ influxdb_release.binaries.core }}"
+    name: influxdb3
     state: started
-
-- name: ensure influxdb 2 is up and running
-  when:
-    - not running_in_check_mode
-    - influxdb_main_version | int == 2
-  bodsch.influx.influxdb2_ping:
-    host: "{{ influxdb_http }}"
-  retries: 10
-  delay: 5
-  register: _ping
-  until: _ping.reachable
-  changed_when: false
 
 - name: ensure influxdb 3 is up and running
   when:
     - not running_in_check_mode
-    - influxdb_main_version | int == 3
   bodsch.influx.influxdb3_ping:
-    host: "{{ influxdb_http }}"
+    host: "{{ influxdb3_http }}"
   retries: 10
   delay: 5
   register: _ping
   until: _ping.reachable
   changed_when: false
 
-- name: influxdb2
-  ansible.builtin.include_tasks: configure/influxdb2.yml
-  when:
-    - not running_in_check_mode
-    - influxdb_main_version | int == 2
-
-- name: influxdb3
-  ansible.builtin.include_tasks: configure/influxdb3.yml
-  when:
-    - not running_in_check_mode
-    - influxdb_main_version | int == 3
-
+# - name: influxdb3
+#   when:
+#     - not running_in_check_mode
+#   ansible.builtin.include_tasks: configure/influxdb3.yml
 
 ...

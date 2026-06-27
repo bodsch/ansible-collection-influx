@@ -1,22 +1,18 @@
 ---
 
-influxdb_version: "2.7.2"
-
-influxdb_cli_version: "2.7.1"
-
-influxdb_service:
+influxdb3_service:
   # supported log levels are debug, info, and error (default info)
   log:
     level: error
 
-influxdb_organizations:
+influxdb3_organizations:
   main-org:
     state: create
     description: Main organization
   guest-org:
     state: create
 
-influxdb_users:
+influxdb3_users:
   admin:
     state: create
     operator: false
@@ -38,7 +34,7 @@ influxdb_users:
       name: guest-org
     password: secretPassword
 
-influxdb_buckets:
+influxdb3_buckets:
   bucket01:
     state: create
     description: First bucket

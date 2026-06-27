@@ -1,5 +1,5 @@
 ---
 
-influxdb_direct_download: true
+influxdb2_direct_download: true
 
 ...

@@ -1,12 +1,9 @@
 ---
 
 # see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influxdb/
-influxdb_version: "2.4.0"
+influxdb3_version: "3.0.0"
 
-# see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influx-cli/
-influxdb_cli_version: "2.7.5"
-
-influxdb_scm:
+influxdb3_scm:
   use_tags: false
   without_beta: true
   version_filter:
@@ -15,7 +12,7 @@ influxdb_scm:
     - ".*beta"
     - ".*rc"
 
-influxdb_release: {}
+influxdb3_release: {}
   # download_url: ""
   # api_url: ""
   # files:
@@ -25,33 +22,33 @@ influxdb_release: {}
   #   influxd: ""
   #   influx: ""
 
-influxdb_system_user: influxdb
-influxdb_system_group: influxdb
-influxdb_config_dir: /etc/influxdb
-influxdb_storage_dir: /var/lib/influxdb
+influxdb3_system_user: influxdb
+influxdb3_system_group: influxdb
+influxdb3_config_dir: /etc/influxdb3
+influxdb3_storage_dir: /var/lib/influxdb3
 
-influxdb_direct_download: false
+influxdb3_direct_download: false
 
-influxdb_service: {}
+influxdb3_serve: {}
 
-influxdb_config:
+influxdb3_config:
   http-bind-address: 127.0.0.1:8086
   reporting-disabled: true
 
-influxdb_primary:
+influxdb3_primary:
   organization: example-org
   bucket: example-bucket
   username: example-user
   password: LA9NMTb6WZ285zPGPgyUJEucuJUjr6W7
   token: example-token
 
-influxdb_organizations: {}
+influxdb3_organizations: {}
 
-influxdb_users: {}
+influxdb3_users: {}
 
-influxdb_buckets: {}
+influxdb3_buckets: {}
 
-# InfluxDB 3 native databases (only used when influxdb_main_version == 3)
-influxdb_databases: {}
+# InfluxDB 3 native databases (only used when influxdb3_main_version == 3)
+influxdb3_databases: {}
 
 ...

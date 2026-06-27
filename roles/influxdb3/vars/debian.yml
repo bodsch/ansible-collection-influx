@@ -1,6 +1,6 @@
 ---
 
-influxdb_requirements:
+influxdb3_requirements:
   - iproute2
 
 ...

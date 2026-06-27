@@ -1,21 +1,21 @@
 ---
 
-influxdb_version: latest
-influxdb_cli_version: "2.7.5"
+influxdb2_version: latest
+influxdb2_cli_version: "2.7.5"
 
-influxdb_service:
+influxdb2_service:
   # supported log levels are debug, info, and error (default info)
   log:
     level: debug
 
-influxdb_organizations:
+influxdb2_organizations:
   main-org:
     state: create
     description: Main organization
   guest-org:
     state: create
 
-influxdb_users:
+influxdb2_users:
   admin:
     state: create
     operator: false

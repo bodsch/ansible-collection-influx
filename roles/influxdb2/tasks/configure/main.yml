@@ -2,18 +2,18 @@
 
 - name: create influxdb config directory
   ansible.builtin.file:
-    path: "{{ influxdb_config_dir }}"
+    path: "{{ influxdb2_config_dir }}"
     state: directory
-    owner: "{{ influxdb_system_user }}"
+    owner: "{{ influxdb2_system_user }}"
     group: root
     mode: "0755"
 
 - name: create influxdb configuration
   ansible.builtin.template:
     src: etc/influxdb/config.yml.j2
-    dest: "{{ influxdb_config_dir }}/config.yml"
+    dest: "{{ influxdb2_config_dir }}/config.yml"
     owner: root
-    group: "{{ influxdb_system_group }}"
+    group: "{{ influxdb2_system_group }}"
     mode: "0644"
   notify:
     - restart influxdb2
@@ -21,11 +21,11 @@
 - name: ensure influxdb is started
   become: true
   ansible.builtin.service:
-    name: influxdb
+    name: influxdb2
     state: started
 
 # TODO
-# define influxdb_url
+# define influxdb2_url
 
 - name: ensure influxdb is up and running
   bodsch.influx.influxdb2_ping:
@@ -39,32 +39,32 @@
 - name: set influxdb default user, organization, and bucket
   bodsch.influx.influxdb2_setup:
     host: "http://127.0.0.1:8086"
-    org: "{{ influxdb_primary.organization }}"
-    bucket: "{{ influxdb_primary.bucket }}"
-    username: "{{ influxdb_primary.username }}"
-    password: "{{ influxdb_primary.password }}"
-    token: "{{ influxdb_primary.token }}"
+    org: "{{ influxdb2_primary.organization }}"
+    bucket: "{{ influxdb2_primary.bucket }}"
+    username: "{{ influxdb2_primary.username }}"
+    password: "{{ influxdb2_primary.password }}"
+    token: "{{ influxdb2_primary.token }}"
   register: _setup
 
 - name: ensure organizations exists
   bodsch.influx.influxdb2_organizations:
     host: "http://127.0.0.1:8086"
-    token: "{{ influxdb_primary.token }}"
-    organizations: "{{ influxdb_organizations }}"
+    token: "{{ influxdb2_primary.token }}"
+    organizations: "{{ influxdb2_organizations }}"
   register: _org
 
 - name: ensure users exist
   bodsch.influx.influxdb2_users:
     host: "http://127.0.0.1:8086"
-    token: "{{ influxdb_primary.token }}"
-    users: "{{ influxdb_users }}"
+    token: "{{ influxdb2_primary.token }}"
+    users: "{{ influxdb2_users }}"
   register: _users
 
 - name: ensure buckets exist
   bodsch.influx.influxdb2_buckets:
     host: "http://127.0.0.1:8086"
-    token: "{{ influxdb_primary.token }}"
-    buckets: "{{ influxdb_buckets }}"
+    token: "{{ influxdb2_primary.token }}"
+    buckets: "{{ influxdb2_buckets }}"
   register: _buckets
 
 ...

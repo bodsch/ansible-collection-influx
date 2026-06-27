@@ -31,30 +31,24 @@
 - name: install dependency
   when:
     - not running_in_check_mode
-    - influxdb_dependencies | default([]) | count > 0
+    - influxdb3_dependencies | default([]) | count > 0
   ansible.builtin.package:
-    name: "{{ influxdb_dependencies }}"
+    name: "{{ influxdb3_dependencies }}"
     state: present
 
 - name: assert wrong influxdb version
   ansible.builtin.assert:
     that:
-      - influxdb_main_version | int in [2, 3]
+      - influxdb3_main_version | int == 3
     msg:
-      - this role handle only influxdb version 2 or 3
+      - this role handle only influxdb version 3
       - for influxdb1 support, please use  mkayontour.ansible-influxdb
     quiet: true
   when:
-    - influxdb_version != "latest"
+    - influxdb3_version != "latest"
 
 - name: merge influxdb configuration between defaults and custom
   ansible.builtin.set_fact:
-    influxdb_service: "{{ influxdb_defaults_service | combine(influxdb_service, recursive=True) }}"
+    influxdb3_service: "{{ influxdb3_defaults_service | combine(influxdb3_service, recursive=True) }}"
 
 ...
-
-# - name: d
-#   debug:
-#     msg:
-#       - "{{ influxdb_version }}"
-#       - "{{ influxdb_main_version }}"

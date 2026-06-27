@@ -19,11 +19,11 @@ This role installs, manages and configures (**ONLY**) InfluxDB2.
 Pull-Requests and Issues are welcome :)
 
 
-If `latest` is set for `influxdb_version`, the role tries to install the latest release version.
+If `latest` is set for `influxdb2_version`, the role tries to install the latest release version.
 **Please use this with caution, as incompatibilities between releases may occur!**
 
-The `influxd` binary are installed below `/opt/influxd/${influxdb_version}` and later linked to `/usr/bin`.  
-The `influx` binary are installed below `/opt/influx/${influxdb_cli_version}` and later linked to `/usr/bin`.  
+The `influxd` binary are installed below `/opt/influxd/${influxdb2_version}` and later linked to `/usr/bin`.  
+The `influx` binary are installed below `/opt/influx/${influxdb2_cli_version}` and later linked to `/usr/bin`.  
 This should make it possible to downgrade relatively safely.
 
 The downloaded archive is stored on the Ansible controller, unpacked and then the binaries are copied to the target system.
@@ -31,7 +31,7 @@ The cache directory can be defined via the environment variable `CUSTOM_LOCAL_TM
 By default it is `${HOME}/.cache/ansible/influxdb`.
 
 If this type of installation is not desired, the download can take place directly on the target system.
-However, this must be explicitly activated by setting `influxdb_direct_download` to `true`.
+However, this must be explicitly activated by setting `influxdb2_direct_download` to `true`.
 
 ## Requirements & Dependencies
 
@@ -78,11 +78,11 @@ If you want to use something stable, please use a [Tagged Version](https://githu
 
 ```yaml
 # see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influxdb/
-influxdb_version: "2.4.0"
+influxdb2_version: "2.4.0"
 # see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influx-cli/
-influxdb_cli_version: "{{ influxdb_version }}"
+influxdb2_cli_version: "{{ influxdb2_version }}"
 
-influxdb_scm:
+influxdb2_scm:
   use_tags: false
   without_beta: false
   version_filter:
@@ -91,7 +91,7 @@ influxdb_scm:
     - ".*beta"
     - ".*rc"
 
-influxdb_release: {}
+influxdb2_release: {}
   # download_url: ""
   # api_url: ""
   # files:
@@ -101,65 +101,65 @@ influxdb_release: {}
   #   influxd: ""
   #   influx: ""
 
-influxdb_system_user: influxdb
-influxdb_system_group: influxdb
-influxdb_config_dir: /etc/influxdb
-influxdb_storage_dir: /var/lib/influxdb
+influxdb2_system_user: influxdb
+influxdb2_system_group: influxdb
+influxdb2_config_dir: /etc/influxdb
+influxdb2_storage_dir: /var/lib/influxdb
 
-influxdb_direct_download: false
+influxdb2_direct_download: false
 
-influxdb_service: {}
+influxdb2_service: {}
 
-influxdb_config:
+influxdb2_config:
   http-bind-address: 127.0.0.1:8086
   reporting-disabled: true
 
-influxdb_primary:
+influxdb2_primary:
   organization: example-org
   bucket: example-bucket
   username: example-user
   password: LA9NMTb6WZ285zPGPgyUJEucuJUjr6W7
   token: example-token
 
-influxdb_organizations: {}
+influxdb2_organizations: {}
 
-influxdb_users: {}
+influxdb2_users: {}
 
-influxdb_buckets: {}
+influxdb2_buckets: {}
 ```
 
-### `influxdb_scm`
+### `influxdb2_scm`
 
-If you want to install the latest version of Influxd, you can configure the variable `influxdb_version` with `latest`.
+If you want to install the latest version of Influxd, you can configure the variable `influxdb2_version` with `latest`.
 
 The corresponding version will then be read from [GitHub](https://github.com/influxdata/influxdb/releases).
 
 > **Unfortunately, this does not work with the CLI client!**
 
 
-### `influxdb_release`
+### `influxdb2_release`
 
 Only needed to download the binary archives.
 
 Default configuration:
 
 ```yaml
-influxdb_release:
+influxdb2_release:
   download_url: "https://dl.influxdata.com/influxdb/releases"
   api_url: ""
   files:
-    influxdb: "{{ influxdb_bin_version }}-{{ influxdb_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
-    influx_client: "{{ influxdb_bin_version }}-client-{{ influxdb_cli_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
+    influxdb: "{{ influxdb2_bin_version }}-{{ influxdb2_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
+    influx_client: "{{ influxdb2_bin_version }}-client-{{ influxdb2_cli_version }}-{{ ansible_facts.system | lower }}-{{ system_architecture }}.tar.gz"
   binaries:
     influxd: "influxd"
     influx: "influx"
 ```
 
-### `influxdb_service`
+### `influxdb2_service`
 
 
 ```yaml
-influxdb_service:
+influxdb2_service:
   # supported log levels are debug, info, and error (default info)
   log:
     level: info
@@ -298,11 +298,11 @@ influxdb_service:
     vault_token: ""
 ```
 
-### `influxdb_organizations`
+### `influxdb2_organizations`
 
 
 ```yaml
-influxdb_organizations:
+influxdb2_organizations:
   main-org:
     state: create
     description: Main organization
@@ -310,11 +310,11 @@ influxdb_organizations:
     state: create
 ```
 
-### `influxdb_users`
+### `influxdb2_users`
 
 
 ```yaml
-influxdb_users:
+influxdb2_users:
 
   foo:
     state: create
@@ -330,11 +330,11 @@ influxdb_users:
     password: secretPassword
 ```
 
-### `influxdb_buckets`
+### `influxdb2_buckets`
 
 
 ```yaml
-influxdb_buckets:
+influxdb2_buckets:
 
   bucket01:
     state: create

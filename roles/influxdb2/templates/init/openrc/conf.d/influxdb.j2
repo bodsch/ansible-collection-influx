@@ -3,45 +3,45 @@
 
 # GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count) }}
 
-config={{ influxdb_config_dir }}/config.yml
+config={{ influxdb2_config_dir }}/config.yml
 
-user="{{ influxdb_system_user }}"
-group="{{ influxdb_system_group }}"
+user="{{ influxdb2_system_user }}"
+group="{{ influxdb2_system_group }}"
 
 influxd_opts="
-{% if influxdb_service is defined %}
-  --log-level {{ influxdb_service.log.level | default('info') }} \
-  --instance-id {{ influxdb_service.instance_id }} \
-  {% if influxdb_service.metrics.enabled is defined and
-        not influxdb_service.metrics.enabled %}
+{% if influxdb2_service is defined %}
+  --log-level {{ influxdb2_service.log.level | default('info') }} \
+  --instance-id {{ influxdb2_service.instance_id }} \
+  {% if influxdb2_service.metrics.enabled is defined and
+        not influxdb2_service.metrics.enabled %}
   --metrics-disabled \
   {% endif %}
-  {% if influxdb_service.ui.enabled is defined and
-        not influxdb_service.ui.enabled %}
+  {% if influxdb2_service.ui.enabled is defined and
+        not influxdb2_service.ui.enabled %}
   --ui-disabled \
   {% endif %}
 {#
-  {% if influxdb_service.http is defined %}
-    {% if influxdb_service.http.bind_address is defined and
-          influxdb_service.http.bind_address | string | length > 0 %}
-  --http-bind-address {{ influxdb_service.http.bind_address }} \
+  {% if influxdb2_service.http is defined %}
+    {% if influxdb2_service.http.bind_address is defined and
+          influxdb2_service.http.bind_address | string | length > 0 %}
+  --http-bind-address {{ influxdb2_service.http.bind_address }} \
     {% endif %}
-    {% if influxdb_service.http.timeouts is defined %}
-      {% if influxdb_service.http.timeouts.idle is defined and
-            influxdb_service.http.timeouts.idle | string | length > 0 %}
-  --http-idle-timeout {{ influxdb_service.http.timeouts.idle }} \
+    {% if influxdb2_service.http.timeouts is defined %}
+      {% if influxdb2_service.http.timeouts.idle is defined and
+            influxdb2_service.http.timeouts.idle | string | length > 0 %}
+  --http-idle-timeout {{ influxdb2_service.http.timeouts.idle }} \
       {% endif %}
-      {% if influxdb_service.http.timeouts.read_header is defined and
-            influxdb_service.http.timeouts.read_header | string | length > 0 %}
-  --http-read-header-timeout {{ influxdb_service.http.timeouts.read_header }} \
+      {% if influxdb2_service.http.timeouts.read_header is defined and
+            influxdb2_service.http.timeouts.read_header | string | length > 0 %}
+  --http-read-header-timeout {{ influxdb2_service.http.timeouts.read_header }} \
       {% endif %}
-      {% if influxdb_service.http.timeouts.read is defined and
-            influxdb_service.http.timeouts.read | string | length > 0 %}
-  --http-read-timeout {{ influxdb_service.http.timeouts.read }} \
+      {% if influxdb2_service.http.timeouts.read is defined and
+            influxdb2_service.http.timeouts.read | string | length > 0 %}
+  --http-read-timeout {{ influxdb2_service.http.timeouts.read }} \
       {% endif %}
-      {% if influxdb_service.http.timeouts.write is defined and
-            influxdb_service.http.timeouts.write | string | length > 0 %}
-  --http-write-timeout {{ influxdb_service.http.timeouts.write }} \
+      {% if influxdb2_service.http.timeouts.write is defined and
+            influxdb2_service.http.timeouts.write | string | length > 0 %}
+  --http-write-timeout {{ influxdb2_service.http.timeouts.write }} \
       {% endif %}
     {% endif %}
   {% endif %}

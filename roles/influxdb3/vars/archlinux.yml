@@ -1,6 +1,6 @@
 ---
 
-influxdb_dependencies:
+influxdb3_dependencies:
   - python-requests
 
 ...

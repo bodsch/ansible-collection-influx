@@ -6,7 +6,7 @@
 - name: ensure influxdb is enabled on boot
   become: true
   ansible.builtin.service:
-    name: influxdb
+    name: influxdb2
     enabled: true
     state: started
 

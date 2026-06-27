@@ -1,10 +1,10 @@
 ---
 
-influxdb_version: "2.9.1"
+influxdb2_version: "2.9.1"
 
-# influxdb_cli_version: "2.7.1"
+# influxdb2_cli_version: "2.7.1"
 
-influxdb_service:
+influxdb2_service:
   # supported log levels are debug, info, and error (default info)
   log:
     level: debug
@@ -14,14 +14,14 @@ influxdb_service:
     # bind address for the REST HTTP API (default ":8086")
     bind_address: "{{ ansible_facts.default_ipv4.address }}:8086"
 
-influxdb_organizations:
+influxdb2_organizations:
   main-org:
     state: create
     description: Main organization
   guest-org:
     state: create
 
-influxdb_users:
+influxdb2_users:
   admin:
     state: create
     operator: false
@@ -43,7 +43,7 @@ influxdb_users:
       name: guest-org
     password: secretPassword
 
-influxdb_buckets:
+influxdb2_buckets:
   bucket01:
     state: create
     description: First bucket

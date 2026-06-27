@@ -30,24 +30,24 @@
 
 - name: install dependency
   ansible.builtin.package:
-    name: "{{ influxdb_requirements }}"
+    name: "{{ influxdb2_requirements }}"
     state: present
   when:
-    - influxdb_requirements | default([]) | count > 0
+    - influxdb2_requirements | default([]) | count > 0
 
 - name: assert wrong influxdb version
   ansible.builtin.assert:
     that:
-      - influxdb_main_version | int == 2
+      - influxdb2_main_version | int == 2
     msg:
       - this role handle only influxdb2
       - for influxdb1 support, please use  mkayontour.ansible-influxdb
     quiet: true
   when:
-    - influxdb_version != "latest"
+    - influxdb2_version != "latest"
 
 - name: merge influxdb configuration between defaults and custom
   ansible.builtin.set_fact:
-    influxdb_service: "{{ influxdb_defaults_service | combine(influxdb_service, recursive=True) }}"
+    influxdb2_service: "{{ influxdb2_defaults_service | combine(influxdb2_service, recursive=True) }}"
 
 ...

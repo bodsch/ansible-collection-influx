@@ -4,20 +4,20 @@
   when:
     - not running_in_check_mode
   bodsch.influx.influxdb3_token:
-    version: "{{ influxdb_version }}"
-    host: "{{ influxdb_http }}"
-    auth_enabled: "{{ influxdb_service.auth.enabled | default(false) | bool }}"
-    token_file: "{{ influxdb_config_dir }}/operator.token"
+    version: "{{ influxdb3_version }}"
+    host: "{{ influxdb3_http }}"
+    auth_enabled: "{{ influxdb3_service.auth.enabled | default(false) | bool }}"
+    token_file: "{{ influxdb3_config_dir }}/operator.token"
   register: _operator
 
 - name: ensure databases exist
   when:
     - not running_in_check_mode
-    - influxdb_databases | default({}) | length > 0
+    - influxdb3_databases | default({}) | length > 0
   bodsch.influx.influxdb3_database:
-    host: "{{ influxdb_http }}"
+    host: "{{ influxdb3_http }}"
     token: "{{ _operator.token | default(omit) }}"
-    databases: "{{ influxdb_databases }}"
+    databases: "{{ influxdb3_databases }}"
   register: _databases
 
 ...

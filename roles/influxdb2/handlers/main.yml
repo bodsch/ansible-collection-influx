@@ -10,17 +10,17 @@
 
 - name: start influxdb2
   ansible.builtin.service:
-    name: influxdb
+    name: influxdb2
     state: started
 
 - name: restart influxdb2
   ansible.builtin.service:
-    name: influxdb
+    name: influxdb2
     state: restarted
 
 - name: reload influxdb2
   ansible.builtin.service:
-    name: influxdb
+    name: influxdb2
     state: reloaded
 
 ...
