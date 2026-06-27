@@ -1,0 +1,50 @@
+---
+
+- name: merge influxdb serve configuration between defaults and custom
+  ansible.builtin.set_fact:
+    influxdb3_serve: "{{ influxdb3_defaults_serve | combine(influxdb3_serve, recursive=True) }}"
+
+- name: define influxdb http service
+  ansible.builtin.set_fact:
+    influxdb3_http: "{{ influxdb3_serve.http | bodsch.influx.influxdb_bind(core_version=influxdb3_main_version) }}"
+
+- name: ensure influxdb3 is started
+  when:
+    - not running_in_check_mode
+  become: true
+  ansible.builtin.service:
+    name: influxdb3
+    state: started
+
+- name: ensure influxdb 3 is up and running
+  when:
+    - not running_in_check_mode
+  bodsch.influx.influxdb3_ping:
+    host: "{{ influxdb3_http }}"
+  retries: 10
+  delay: 5
+  register: _ping
+  until: _ping.reachable
+  changed_when: false
+
+- name: create operator token
+  when:
+    - not running_in_check_mode
+  bodsch.influx.influxdb3_token:
+    version: "{{ influxdb3_version }}"
+    host: "{{ influxdb3_http }}"
+    auth_enabled: "{{ influxdb3_serve.auth.enabled | default(false) | bool }}"
+    token_file: "{{ influxdb3_config_dir }}/operator.token"
+  register: _operator
+
+- name: ensure databases exist
+  when:
+    - not running_in_check_mode
+    - influxdb3_databases | default({}) | length > 0
+  bodsch.influx.influxdb3_database:
+    host: "{{ influxdb3_http }}"
+    token: "{{ _operator.token | default(omit) }}"
+    databases: "{{ influxdb3_databases }}"
+  register: _databases
+
+...

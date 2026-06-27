@@ -3,15 +3,6 @@
 # see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influxdb/
 influxdb3_version: "3.0.0"
 
-influxdb3_scm:
-  use_tags: false
-  without_beta: true
-  version_filter:
-    - ".*test*"
-    - ".*preview"
-    - ".*beta"
-    - ".*rc"
-
 influxdb3_release: {}
   # download_url: ""
   # api_url: ""
@@ -29,24 +20,10 @@ influxdb3_storage_dir: /var/lib/influxdb3
 
 influxdb3_direct_download: false
 
+# User-facing override for the `influxdb3 serve` parameters. Merged (recursive) over
+# influxdb3_defaults_serve (vars/main.yml) in tasks/prepare.yml. See that catalogue for
+# every available option, its environment variable and minimum InfluxDB version.
 influxdb3_serve: {}
-
-influxdb3_config:
-  http-bind-address: 127.0.0.1:8086
-  reporting-disabled: true
-
-influxdb3_primary:
-  organization: example-org
-  bucket: example-bucket
-  username: example-user
-  password: LA9NMTb6WZ285zPGPgyUJEucuJUjr6W7
-  token: example-token
-
-influxdb3_organizations: {}
-
-influxdb3_users: {}
-
-influxdb3_buckets: {}
 
 # InfluxDB 3 native databases (only used when influxdb3_main_version == 3)
 influxdb3_databases: {}

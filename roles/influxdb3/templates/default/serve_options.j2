@@ -1,0 +1,290 @@
+{# ----------------------------------------------------------------------------------------
+   Shared `influxdb3 serve` command line, included by both the systemd EnvironmentFile
+   (default/influxdb3.j2) and the OpenRC service configuration (init/openrc/conf.d/influxdb.j2).
+
+   Renders the global options (before `serve`), the `serve` subcommand and the complete,
+   version-gated flag set. Every option is opt-in; see vars/main.yml (influxdb3_defaults_serve)
+   for the documented catalogue. Callers wrap this in `VAR=" ... "`.
+   ---------------------------------------------------------------------------------------- #}
+{% set s = influxdb3_serve %}
+{# per-option version gates (a 'latest' version satisfies every gate) #}
+{% set v302  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.0.2',  '>=')) %}
+{% set v310  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.1.0',  '>=')) %}
+{% set v320  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.2.0',  '>=')) %}
+{% set v330  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.3.0',  '>=')) %}
+{% set v340  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.4.0',  '>=')) %}
+{% set v350  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.5.0',  '>=')) %}
+{% set v360  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.6.0',  '>=')) %}
+{% set v382  = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.8.2',  '>=')) %}
+{% set v3100 = (influxdb3_version == 'latest') or (influxdb3_version is version_compare('3.10.0', '>=')) %}
+{# ---- global options (MUST precede the `serve` subcommand) ---- #}
+{% if s.num_io_threads | default('') | string | length > 0 and v310 %}
+  --num-io-threads {{ s.num_io_threads }} \
+{% endif %}
+  serve \
+{# ---- required / object store ---- #}
+  --node-id {{ s.node_id }} \
+  --object-store {{ s.object_store.type | default('file') }} \
+{% if (s.object_store.type | default('file')) == 'file' %}
+  --data-dir {{ influxdb3_storage_dir }} \
+{% endif %}
+{% if s.object_store.bucket | default('') | string | length > 0 %}
+  --bucket {{ s.object_store.bucket }} \
+{% endif %}
+{% if s.object_store.connection_limit | default('') | string | length > 0 %}
+  --object-store-connection-limit {{ s.object_store.connection_limit }} \
+{% endif %}
+{% if s.object_store.http2_only | default(false) | bool %}
+  --object-store-http2-only \
+{% endif %}
+{% if s.object_store.http2_max_frame_size | default('') | string | length > 0 %}
+  --object-store-http2-max-frame-size {{ s.object_store.http2_max_frame_size }} \
+{% endif %}
+{% if s.object_store.max_retries | default('') | string | length > 0 %}
+  --object-store-max-retries {{ s.object_store.max_retries }} \
+{% endif %}
+{% if s.object_store.retry_timeout | default('') | string | length > 0 %}
+  --object-store-retry-timeout {{ s.object_store.retry_timeout }} \
+{% endif %}
+{% if s.object_store.cache_endpoint | default('') | string | length > 0 %}
+  --object-store-cache-endpoint {{ s.object_store.cache_endpoint }} \
+{% endif %}
+{% if s.object_store.request_timeout | default('') | string | length > 0 and v360 %}
+  --object-store-request-timeout {{ s.object_store.request_timeout }} \
+{% endif %}
+{% if (s.object_store.tls_allow_insecure | default(false) | bool) and v350 %}
+  --object-store-tls-allow-insecure \
+{% endif %}
+{% if s.object_store.tls_ca | default('') | string | length > 0 and v350 %}
+  --object-store-tls-ca {{ s.object_store.tls_ca }} \
+{% endif %}
+{# ---- AWS S3 ---- #}
+{% if s.object_store.aws.access_key_id | default('') | string | length > 0 %}
+  --aws-access-key-id {{ s.object_store.aws.access_key_id }} \
+{% endif %}
+{% if s.object_store.aws.secret_access_key | default('') | string | length > 0 %}
+  --aws-secret-access-key {{ s.object_store.aws.secret_access_key }} \
+{% endif %}
+{% if s.object_store.aws.default_region | default('') | string | length > 0 %}
+  --aws-default-region {{ s.object_store.aws.default_region }} \
+{% endif %}
+{% if s.object_store.aws.endpoint | default('') | string | length > 0 %}
+  --aws-endpoint {{ s.object_store.aws.endpoint }} \
+{% endif %}
+{% if s.object_store.aws.session_token | default('') | string | length > 0 %}
+  --aws-session-token {{ s.object_store.aws.session_token }} \
+{% endif %}
+{% if s.object_store.aws.allow_http | default(false) | bool %}
+  --aws-allow-http \
+{% endif %}
+{% if s.object_store.aws.skip_signature | default(false) | bool %}
+  --aws-skip-signature \
+{% endif %}
+{% if s.object_store.aws.credentials_file | default('') | string | length > 0 and v320 %}
+  --aws-credentials-file {{ s.object_store.aws.credentials_file }} \
+{% endif %}
+{# ---- Google Cloud Storage ---- #}
+{% if s.object_store.google.service_account | default('') | string | length > 0 %}
+  --google-service-account {{ s.object_store.google.service_account }} \
+{% endif %}
+{# ---- Azure Blob Storage ---- #}
+{% if s.object_store.azure.storage_account | default('') | string | length > 0 %}
+  --azure-storage-account {{ s.object_store.azure.storage_account }} \
+{% endif %}
+{% if s.object_store.azure.storage_access_key | default('') | string | length > 0 %}
+  --azure-storage-access-key {{ s.object_store.azure.storage_access_key }} \
+{% endif %}
+{% if s.object_store.azure.endpoint | default('') | string | length > 0 and v340 %}
+  --azure-endpoint {{ s.object_store.azure.endpoint }} \
+{% endif %}
+{% if (s.object_store.azure.allow_http | default(false) | bool) and v340 %}
+  --azure-allow-http \
+{% endif %}
+{# ---- http / network ---- #}
+  --http-bind {{ s.http.bind }} \
+{% if s.http.max_request_size | default('') | string | length > 0 %}
+  --max-http-request-size {{ s.http.max_request_size }} \
+{% endif %}
+{% if s.tcp_listener_file_path | default('') | string | length > 0 and v310 %}
+  --tcp-listener-file-path {{ s.tcp_listener_file_path }} \
+{% endif %}
+{# ---- TLS ---- #}
+{% if s.tls.cert | default('') | string | length > 0 %}
+  --tls-cert {{ s.tls.cert }} \
+{% endif %}
+{% if s.tls.key | default('') | string | length > 0 %}
+  --tls-key {{ s.tls.key }} \
+{% endif %}
+{% if s.tls.minimum_version | default('') | string | length > 0 and v302 %}
+  --tls-minimum-version {{ s.tls.minimum_version }} \
+{% endif %}
+{# ---- auth / authz ---- #}
+{% if not (s.auth.enabled | default(false) | bool) %}
+  --without-auth \
+{% endif %}
+{% if (s.auth.disable_authz | default([]) | length > 0) and v310 %}
+  --disable-authz {{ s.auth.disable_authz | join(',') }} \
+{% endif %}
+{% if s.auth.admin_token_file | default('') | string | length > 0 and v340 %}
+  --admin-token-file {{ s.auth.admin_token_file }} \
+{% endif %}
+{% if s.auth.admin_token_recovery_http_bind | default('') | string | length > 0 and v330 %}
+  --admin-token-recovery-http-bind {{ s.auth.admin_token_recovery_http_bind }} \
+{% endif %}
+{% if s.auth.admin_token_recovery_tcp_listener_file_path | default('') | string | length > 0 and v330 %}
+  --admin-token-recovery-tcp-listener-file-path {{ s.auth.admin_token_recovery_tcp_listener_file_path }} \
+{% endif %}
+{# ---- query / resource limits ---- #}
+{% if s.query.file_limit | default('') | string | length > 0 %}
+  --query-file-limit {{ s.query.file_limit }} \
+{% endif %}
+{% if s.query.log_size | default('') | string | length > 0 %}
+  --query-log-size {{ s.query.log_size }} \
+{% endif %}
+{% if s.query.max_concurrent | default('') | string | length > 0 and v3100 %}
+  --max-concurrent-queries {{ s.query.max_concurrent }} \
+{% endif %}
+{# ---- memory ---- #}
+{% if s.memory.exec_mem_pool_bytes | default('') | string | length > 0 %}
+  --exec-mem-pool-bytes {{ s.memory.exec_mem_pool_bytes }} \
+{% endif %}
+{% if s.memory.force_snapshot_mem_threshold | default('') | string | length > 0 %}
+  --force-snapshot-mem-threshold {{ s.memory.force_snapshot_mem_threshold }} \
+{% endif %}
+{# ---- write-ahead log (WAL) ---- #}
+{% if s.wal.flush_interval | default('') | string | length > 0 %}
+  --wal-flush-interval {{ s.wal.flush_interval }} \
+{% endif %}
+{% if s.wal.snapshot_size | default('') | string | length > 0 %}
+  --wal-snapshot-size {{ s.wal.snapshot_size }} \
+{% endif %}
+{% if s.wal.max_write_buffer_size | default('') | string | length > 0 %}
+  --wal-max-write-buffer-size {{ s.wal.max_write_buffer_size }} \
+{% endif %}
+{% if s.wal.snapshotted_files_to_keep | default('') | string | length > 0 %}
+  --snapshotted-wal-files-to-keep {{ s.wal.snapshotted_files_to_keep }} \
+{% endif %}
+{% if (s.wal.replay_fail_on_error | default(false) | bool) and v320 %}
+  --wal-replay-fail-on-error \
+{% endif %}
+{% if s.wal.replay_concurrency_limit | default('') | string | length > 0 and v320 %}
+  --wal-replay-concurrency-limit {{ s.wal.replay_concurrency_limit }} \
+{% endif %}
+{% if s.checkpoint_interval | default('') | string | length > 0 and v382 %}
+  --checkpoint-interval {{ s.checkpoint_interval }} \
+{% endif %}
+{# ---- compaction / data lifecycle ---- #}
+{% if s.compaction.gen1_duration | default('') | string | length > 0 %}
+  --gen1-duration {{ s.compaction.gen1_duration }} \
+{% endif %}
+{% if s.compaction.gen1_lookback_duration | default('') | string | length > 0 and v320 %}
+  --gen1-lookback-duration {{ s.compaction.gen1_lookback_duration }} \
+{% endif %}
+{% if s.retention.check_interval | default('') | string | length > 0 and v330 %}
+  --retention-check-interval {{ s.retention.check_interval }} \
+{% endif %}
+{% if s.retention.delete_grace_period | default('') | string | length > 0 and v320 %}
+  --delete-grace-period {{ s.retention.delete_grace_period }} \
+{% endif %}
+{% if s.retention.hard_delete_default_duration | default('') | string | length > 0 and v320 %}
+  --hard-delete-default-duration {{ s.retention.hard_delete_default_duration }} \
+{% endif %}
+{# ---- caches ---- #}
+{% if s.cache.parquet_mem_cache_size | default('') | string | length > 0 %}
+  --parquet-mem-cache-size {{ s.cache.parquet_mem_cache_size }} \
+{% endif %}
+{% if s.cache.parquet_mem_cache_prune_percentage | default('') | string | length > 0 %}
+  --parquet-mem-cache-prune-percentage {{ s.cache.parquet_mem_cache_prune_percentage }} \
+{% endif %}
+{% if s.cache.parquet_mem_cache_prune_interval | default('') | string | length > 0 %}
+  --parquet-mem-cache-prune-interval {{ s.cache.parquet_mem_cache_prune_interval }} \
+{% endif %}
+{% if s.cache.parquet_mem_cache_query_path_duration | default('') | string | length > 0 %}
+  --parquet-mem-cache-query-path-duration {{ s.cache.parquet_mem_cache_query_path_duration }} \
+{% endif %}
+{% if s.cache.disable_parquet_mem_cache | default(false) | bool %}
+  --disable-parquet-mem-cache \
+{% endif %}
+{% if s.cache.last_cache_eviction_interval | default('') | string | length > 0 %}
+  --last-cache-eviction-interval {{ s.cache.last_cache_eviction_interval }} \
+{% endif %}
+{% if s.cache.distinct_cache_eviction_interval | default('') | string | length > 0 %}
+  --distinct-cache-eviction-interval {{ s.cache.distinct_cache_eviction_interval }} \
+{% endif %}
+{% if s.cache.table_index_cache_max_entries | default('') | string | length > 0 and v330 %}
+  --table-index-cache-max-entries {{ s.cache.table_index_cache_max_entries }} \
+{% endif %}
+{% if s.cache.table_index_cache_concurrency_limit | default('') | string | length > 0 and v330 %}
+  --table-index-cache-concurrency-limit {{ s.cache.table_index_cache_concurrency_limit }} \
+{% endif %}
+{# ---- datafusion (query engine) ---- #}
+{% if s.datafusion.num_threads | default('') | string | length > 0 %}
+  --datafusion-num-threads {{ s.datafusion.num_threads }} \
+{% endif %}
+{% if s.datafusion.max_parquet_fanout | default('') | string | length > 0 %}
+  --datafusion-max-parquet-fanout {{ s.datafusion.max_parquet_fanout }} \
+{% endif %}
+{% if s.datafusion.use_cached_parquet_loader | default(false) | bool %}
+  --datafusion-use-cached-parquet-loader \
+{% endif %}
+{% if s.datafusion.config | default('') | string | length > 0 %}
+  --datafusion-config {{ s.datafusion.config }} \
+{% endif %}
+{# ---- processing engine (plugins) ---- #}
+{% if s.processing_engine.plugin_dir | default('') | string | length > 0 %}
+  --plugin-dir {{ s.processing_engine.plugin_dir }} \
+{% endif %}
+{% if s.processing_engine.plugin_repo | default('') | string | length > 0 and v350 %}
+  --plugin-repo {{ s.processing_engine.plugin_repo }} \
+{% endif %}
+{% if s.processing_engine.virtual_env_location | default('') | string | length > 0 %}
+  --virtual-env-location {{ s.processing_engine.virtual_env_location }} \
+{% endif %}
+{% if s.processing_engine.package_manager | default('') | string | length > 0 %}
+  --package-manager {{ s.processing_engine.package_manager }} \
+{% endif %}
+{% if s.processing_engine.restrict_plugin_triggers_to | default('') | string | length > 0 and v3100 %}
+  --restrict-plugin-triggers-to {{ s.processing_engine.restrict_plugin_triggers_to }} \
+{% endif %}
+{# ---- logging ---- #}
+{% if s.log.filter | default('') | string | length > 0 %}
+  --log-filter {{ s.log.filter }} \
+{% endif %}
+{% if s.log.format | default('') | string | length > 0 %}
+  --log-format {{ s.log.format }} \
+{% endif %}
+{% if s.log.destination | default('') | string | length > 0 %}
+  --log-destination {{ s.log.destination }} \
+{% endif %}
+{# ---- tracing ---- #}
+{% if s.tracing.exporter | default('') | string | length > 0 %}
+  --traces-exporter {{ s.tracing.exporter }} \
+{% endif %}
+{% if s.tracing.jaeger.agent_host | default('') | string | length > 0 %}
+  --traces-exporter-jaeger-agent-host {{ s.tracing.jaeger.agent_host }} \
+{% endif %}
+{% if s.tracing.jaeger.agent_port | default('') | string | length > 0 %}
+  --traces-exporter-jaeger-agent-port {{ s.tracing.jaeger.agent_port }} \
+{% endif %}
+{% if s.tracing.jaeger.service_name | default('') | string | length > 0 %}
+  --traces-exporter-jaeger-service-name {{ s.tracing.jaeger.service_name }} \
+{% endif %}
+{% if s.tracing.jaeger.trace_context_header_name | default('') | string | length > 0 %}
+  --traces-exporter-jaeger-trace-context-header-name {{ s.tracing.jaeger.trace_context_header_name }} \
+{% endif %}
+{% if s.tracing.jaeger.debug_name | default('') | string | length > 0 %}
+  --traces-jaeger-debug-name {{ s.tracing.jaeger.debug_name }} \
+{% endif %}
+{% if s.tracing.jaeger.tags | default('') | string | length > 0 %}
+  --traces-jaeger-tags {{ s.tracing.jaeger.tags }} \
+{% endif %}
+{% if s.tracing.jaeger.max_msgs_per_second | default('') | string | length > 0 %}
+  --traces-jaeger-max-msgs-per-second {{ s.tracing.jaeger.max_msgs_per_second }} \
+{% endif %}
+{# ---- telemetry ---- #}
+{% if s.telemetry.disable_upload | default(false) | bool %}
+  --disable-telemetry-upload \
+{% endif %}
+{% if s.telemetry.endpoint | default('') | string | length > 0 %}
+  --telemetry-endpoint {{ s.telemetry.endpoint }} \
+{% endif %}

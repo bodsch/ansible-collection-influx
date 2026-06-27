@@ -1,9 +1,9 @@
 ---
 
-influxdb3_service:
-  # supported log levels are debug, info, and error (default info)
+influxdb3_serve:
+  # log-filter directive, e.g. debug, info, error (default info)
   log:
-    level: error
+    filter: error
 
 influxdb3_organizations:
   main-org:

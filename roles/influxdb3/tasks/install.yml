@@ -21,17 +21,6 @@
         createhome: false
         home: "{{ influxdb3_storage_dir }}"
 
-# - name: find account defaults
-#   bodsch.core.account_defaults:
-#     default_user: "{{ influxdb3_system_user }}"
-#     group: "{{ influxdb3_system_group | default(influxdb3_system_user) }}"
-#   register: _default_user
-#
-# - name: define influxdb user and group
-#   ansible.builtin.set_fact:
-#     influxdb3_system_user: "{{ _default_user.user }}"
-#     influxdb3_system_group: "{{ _default_user.group }}"
-
 - name: create install directory trees
   bodsch.core.directories:
     owner: "{{ influxdb3_system_user }}"

@@ -47,8 +47,4 @@
   when:
     - influxdb3_version != "latest"
 
-- name: merge influxdb configuration between defaults and custom
-  ansible.builtin.set_fact:
-    influxdb3_service: "{{ influxdb3_defaults_service | combine(influxdb3_service, recursive=True) }}"
-
 ...

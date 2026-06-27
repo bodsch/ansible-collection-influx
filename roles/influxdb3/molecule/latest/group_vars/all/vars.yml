@@ -1,12 +1,11 @@
 ---
 
 influxdb3_version: latest
-influxdb3_cli_version: "2.7.5"
 
-influxdb3_service:
-  # supported log levels are debug, info, and error (default info)
+influxdb3_serve:
+  # log-filter directive, e.g. debug, info, error (default info)
   log:
-    level: debug
+    filter: debug
 
 influxdb3_organizations:
   main-org:

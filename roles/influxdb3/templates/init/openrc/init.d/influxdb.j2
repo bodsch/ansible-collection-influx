@@ -1,61 +1,50 @@
 #!/sbin/openrc-run
+# {{ ansible_managed }}
+#
+# OpenRC service for InfluxDB 3. Runtime options come from /etc/conf.d/influxdb3
+# (INFLUXDB3_OPTS), which already includes the `serve` subcommand and all flags.
 
-# Logging
-error_log="${error_log:-/var/log/influxdb/influxd.log}"
-output_log="${output_log:-/dev/null}"
+name="influxdb3"
+description="InfluxDB is an open-source, distributed, time series database"
+description_reload="Reload the configuration (SIGHUP)"
 
-config="${config:-/etc/influxdb/config.yml}"
-influxd_opts=${influxd_opts:-}
+: "${influxdb3_user:={{ influxdb3_system_user }}}"
+: "${influxdb3_group:={{ influxdb3_system_group }}}"
+: "${INFLUXDB3_OPTS:=}"
 
-required_files="${config}"
+command="/usr/bin/influxdb3"
+command_args="${INFLUXDB3_OPTS}"
+command_user="${influxdb3_user}:${influxdb3_group}"
+directory="{{ influxdb3_storage_dir }}"
+pidfile="/run/${name}.pid"
 
-command=/usr/bin/influxd
-command_args_background="--background"
-command_args="${influxd_opts}"
-command_user="${user}:${group}"
+# Supervised process log destinations.
+output_log="${output_log:-/var/log/influxdb3/influxdb3.log}"
+error_log="${error_log:-/var/log/influxdb3/influxdb3.log}"
 
-extra_commands="version"
-
-retry=SIGTERM/30/SIGKILL/10
+# Supervise the process: restart on exit (mirrors systemd Restart=always / RestartSec=30).
 supervisor="supervise-daemon"
+respawn_delay=30
+respawn_max=0
 
-export INFLUXD_CONFIG_PATH="${config}"
+# Raise the open-file limit (mirrors the systemd unit LimitNOFILE).
+rc_ulimit="-n 65000"
 
-# Max open files
-rc_ulimit="-n 65536"
+extra_started_commands="reload"
+
+depend() {
+    need net
+    after firewall
+}
 
 start_pre() {
-  # Check if config file exist
-  if [ ! -r "${config}" ]
-  then
-    eerror "config file ${config} doesn't exist"
-    return 1
-  fi
-  if [ -n "${error_log}" ] && [ ! -e "${error_log}" ]
-  then
-    checkpath -d -o "${command_user}" "$(dirname "${error_log}")"
-  fi
-  if [ -n "${output_log}" ] && [ ! -e "${output_log}" ]
-  then
-    checkpath -d -o "${command_user}" "$(dirname "${output_log}")"
-  fi
-  return 0
+    checkpath --directory --owner "${influxdb3_user}:${influxdb3_group}" --mode 0750 "{{ influxdb3_storage_dir }}"
+    checkpath --directory --owner "${influxdb3_user}:${influxdb3_group}" --mode 0750 "$(dirname "${output_log}")"
+    return 0
 }
 
-version() {
-  $command version
+reload() {
+    ebegin "Reloading ${name}"
+    supervise-daemon "${name}" --pidfile "${pidfile}" --signal HUP
+    eend $?
 }
-
-if [ -n "${INFLUXDB_HEALTHCHECK}" ]
-then
-  healthcheck_delay=300
-  healthcheck_timer=60
-
-  healthcheck() {
-    command -v influx || return 0
-    influx ping --host ${INFLUXDB_HEALTHCHECK}
-  }
-fi
-
-
-
