@@ -275,7 +275,8 @@ __telegraf_files:
   # https://dl.influxdata.com/telegraf/releases/telegraf-1.26.2_linux_amd64.tar.gz
   archive: "telegraf-{{ telegraf_version }}_{{ ansible_facts.system | lower }}_{{ system_architecture }}.tar.gz"
   checksum: ""
-  binary: "telegraf-{{ telegraf_version }}_{{ ansible_facts.system | lower }}_{{ system_architecture }}.tar.gz"
+  # binary: "telegraf-{{ telegraf_version }}_{{ ansible_facts.system | lower }}_{{ system_architecture }}.tar.gz"
+  binary: telegraf
 
 go_arch_map:
   x86_64: 'amd64'

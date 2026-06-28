@@ -1,9 +1,31 @@
 ---
 
+- name: merge telegraf configuration between defaults and custom
+  when:
+    - not running_in_check_mode
+  ansible.builtin.set_fact:
+    telegraf_config_agent: "{{ telegraf_defaults_config_agent | combine(telegraf_config_agent, recursive=True) }}"
+    telegraf_config_outputs: "{{ telegraf_defaults_config_outputs | union(telegraf_config_outputs) | bodsch.influx.telegraf_clean_list }}"
+    telegraf_config_inputs: "{{ telegraf_defaults_config_inputs | union(telegraf_config_inputs) }}"
+    telegraf_config_processors: "{{ telegraf_defaults_config_processors | union(telegraf_config_processors) }}"
+    telegraf_config_aggregators: "{{ telegraf_defaults_config_aggregators | union(telegraf_config_aggregators) | bodsch.influx.telegraf_clean_list }}"
+
+- name: create install directory trees
+  when:
+    - not running_in_check_mode
+  bodsch.core.directories:
+    owner: root
+    group: "{{ telegraf_system_group }}"
+    mode: "0770"
+    paths:
+      - path: "{{ telegraf_config_dir }}"
+      - path: "{{ telegraf_config_dir }}/telegraf.d"
+
 - name: handle logfile
   # logfile is the destination selector for all telegraf versions (empty = stderr);
   # logtarget was deprecated in 1.32 in favour of logformat + logfile.
   when:
+    - not running_in_check_mode
     - telegraf_config_agent.logfile is defined
     - telegraf_config_agent.logfile | string | length > 0
   block:
@@ -33,6 +55,8 @@
           )
 
 - name: create telegraf.conf
+  when:
+    - not running_in_check_mode
   ansible.builtin.template:
     force: true
     src: telegraf/telegraf.conf.j2
@@ -45,6 +69,8 @@
     - reload telegraf
 
 - name: force restart service after reread config
+  when:
+    - not running_in_check_mode
   ansible.builtin.meta: flush_handlers
 
 ...

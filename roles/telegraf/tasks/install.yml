@@ -1,44 +1,66 @@
 ---
 
-- name: detect binary file for telegraf on {{ telegraf_delegate_to }}
-  become: false
-  delegate_to: "{{ telegraf_delegate_to }}"
-  run_once: "{{ 'false' if telegraf_direct_download else 'true' }}"
-  ansible.builtin.stat:
-    path: "{{ telegraf_local_tmp_directory }}/telegraf-{{ telegraf_version }}/usr/bin/telegraf"
-  register: stat_file_binary
-
-- name: propagate files
+- name: user and group handling
   when:
-    - stat_file_binary.stat.exists
+    - not running_in_check_mode
+    - telegraf_system_user != "root" or telegraf_system_group != "root"
   block:
-    - name: propagate telegraf binaries
-      ansible.builtin.copy:
-        src: "{{ telegraf_local_tmp_directory }}/telegraf-{{ telegraf_version }}/usr/bin/telegraf"
-        dest: "{{ telegraf_install_path }}/"
-        mode: "0755"
-        owner: "{{ telegraf_system_user }}"
-        group: "{{ telegraf_system_group }}"
-        remote_src: "{{ 'true' if telegraf_direct_download else 'false' }}"
+    - name: create telegraf group
+      ansible.builtin.group:
+        name: "{{ telegraf_system_group }}"
+        state: present
+        system: true
+      when:
+        - telegraf_system_group != "root"
 
-- name: create custom fact file
-  bodsch.core.facts:
-    name: telegraf
-    facts:
-      version: "{{ telegraf_version }}"
+    - name: create telegraf user
+      ansible.builtin.user:
+        name: "{{ telegraf_system_user }}"
+        groups: "{{ telegraf_system_group }}"
+        append: true
+        shell: /usr/sbin/nologin
+        system: true
+        createhome: false
+        home: /nonexistent
+      when:
+        - telegraf_system_user != "root"
 
-- name: create link to binary
+- name: create install directory
+  when:
+    - not running_in_check_mode
   ansible.builtin.file:
-    src: "{{ telegraf_install_path }}/telegraf"
-    dest: "/usr/bin/telegraf"
-    state: link
-    force: true
-    follow: false
+    path: "{{ telegraf_install_path }}"
+    state: directory
+    owner: "{{ telegraf_system_user }}"
+    group: "{{ telegraf_system_group }}"
+    mode: "0755"
+
+- name: deploy and activate telegraf version {{ telegraf_version }}
+  when:
+    - not running_in_check_mode
+  bodsch.core.deploy_and_activate:
+    src_dir: "{{ telegraf_local_tmp_directory }}/usr/bin"
+    install_dir: "{{ telegraf_install_path }}"
+    link_dir: "/usr/bin"
+    remote_src: "{{ ('true' if telegraf_direct_download else 'false') | bool }}"
+    owner: "{{ telegraf_system_user }}"
+    group: "{{ telegraf_system_group }}"
+    mode: "0755"
+    items:
+      - name: telegraf
+        # capability: "cap_net_raw+ep"
   notify:
     - restart telegraf
 
+- name: merge telegraf configuration between defaults and custom
+  when:
+    - not running_in_check_mode
+  ansible.builtin.set_fact:
+    telegraf_service: "{{ telegraf_defaults_service | combine(telegraf_service, recursive=True) }}"
+
 - name: systemd
   when:
+    - not running_in_check_mode
     - ansible_facts.service_mgr | lower == "systemd"
   block:
     - name: create telegraf run configuration
@@ -61,9 +83,11 @@
         mode: "0644"
       notify:
         - daemon-reload
+        - restart telegraf
 
 - name: openrc
   when:
+    - not running_in_check_mode
     - ansible_facts.service_mgr | lower == "openrc"
   block:
     - name: create openrc service configuration
@@ -85,21 +109,5 @@
         mode: "0750"
       notify:
         - restart telegraf
-
-- name: create telegraf configuration directory
-  ansible.builtin.file:
-    path: "{{ telegraf_config_dir }}"
-    state: directory
-    owner: root
-    group: "{{ telegraf_system_group }}"
-    mode: "0770"
-
-- name: create telegraf configuration sub-directory
-  ansible.builtin.file:
-    path: "{{ telegraf_config_dir }}/telegraf.d"
-    state: directory
-    owner: root
-    group: "{{ telegraf_system_group }}"
-    mode: "0770"
 
 ...
