@@ -100,7 +100,7 @@
 
 - name: create custom fact file
   bodsch.core.facts:
-    name: influxdb
+    name: influxdb2
     facts:
       version:
         influxd: "{{ influxdb2_version }}"

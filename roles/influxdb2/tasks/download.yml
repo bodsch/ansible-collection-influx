@@ -7,7 +7,7 @@
   delegate_to: localhost
   run_once: true
   bodsch.influx.influx_download_data:
-    major_version: "{{ influxdb2_main_version }}"
+    major_version: 2
     version: "{{ influxdb2_version }}"
   register: influx_downloads
 

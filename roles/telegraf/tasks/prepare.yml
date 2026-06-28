@@ -51,7 +51,7 @@
       delegate_to: localhost
       become: false
       run_once: true
-      bodsch.scm.scm_release:
+      bodsch.scm.github_latest:
         project: influxdata
         repository: telegraf
         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
@@ -61,47 +61,6 @@
     - name: re-define telegraf_version
       ansible.builtin.set_fact:
         telegraf_version: "{{ _latest_release.latest_release }}"
-
-    # - name: get latest release
-      # delegate_to: localhost
-      # become: false
-      # run_once: true
-      # bodsch.scm.github_latest:
-        # project: influxdata
-        # repository: telegraf
-        # user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
-        # password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
-      # register: _latest_release
-#
-    # - name: re-define telegraf_version
-      # ansible.builtin.set_fact:
-        # telegraf_version: "{{ _latest_release.latest_release }}"
-
-# - name: latest release
-#   when:
-#     - telegraf_version == "latest"
-#   block:
-#     - name: get latest release
-#       delegate_to: localhost
-#       become: false
-#       run_once: true
-#       ansible.builtin.uri:
-#         url: "https://api.github.com/repos/influxdata/telegraf/releases/latest"
-#         method: GET
-#         return_content: true
-#         status_code: 200
-#         body_format: json
-#         validate_certs: false
-#         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
-#         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
-#       # no_log: "{{ not lookup('env', 'ANSIBLE_DEBUG') | bool }}"
-#       register: _latest_release
-#       until: _latest_release.status == 200
-#       retries: 5
-#
-#     - name: re-define telegraf_version
-#       ansible.builtin.set_fact:
-#         telegraf_version: "{{ _latest_release.json.tag_name[1:] }}"
 
 - name: detect our installation path '{{ bodsch.influx.telegraf_install_path | dirname }}'
   ansible.builtin.stat:

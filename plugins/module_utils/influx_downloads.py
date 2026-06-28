@@ -34,6 +34,7 @@ from typing import Any
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import fetch_url
+from ansible_collections.bodsch.influx.plugins.module_utils.influx_cache import InfluxDownloadCache
 
 # --- Regex ---
 SEMVER_RE = re.compile(r"^(?P<maj>\d+)\.(?P<min>\d+)\.(?P<pat>\d+)$")
@@ -87,9 +88,13 @@ class InfluxDownloads:
       - timeout: int (seconds; default 15)
       - validate_certs: bool (default True)
       - user_agent: str (default "ansible-influx-downloads")
+      - cache_dir: str (cache directory; default "~/.cache/ansible/influx/downloads")
+      - cache_minutes: int (cache TTL in minutes; 0 disables caching; default 60)
     """
 
     _DEFAULT_DOWNLOAD_BASE = "https://dl.influxdata.com/influxdb/releases"
+    _DEFAULT_CACHE_DIR: str = "~/.cache/ansible/influx/downloads"
+    _DEFAULT_CACHE_MINUTES: int = 60
     _V3_INSTALL_SCRIPT_URL = "https://www.influxdata.com/d/install_influxdb3.sh"
     _GITHUB_RELEASES_URL = "https://api.github.com/repos/influxdata/influxdb/releases"
     _GITHUB_RELEASE_TAG_URL = "https://api.github.com/repos/influxdata/influxdb/releases/tags"
@@ -132,6 +137,19 @@ class InfluxDownloads:
 
         # Older ansible-core: fetch_url reads validate_certs from module.params (no kwarg).
         self.module.params.setdefault("validate_certs", self.validate_certs)
+
+        # On-disk cache for remote lookups (install script, GitHub API, .sha256, HEAD checks).
+        cache_dir = p.get("cache_dir")
+        if cache_dir is None:
+            cache_dir = self._DEFAULT_CACHE_DIR
+        cache_minutes = p.get("cache_minutes")
+        if cache_minutes is None:
+            cache_minutes = self._DEFAULT_CACHE_MINUTES
+        self.cache: InfluxDownloadCache = InfluxDownloadCache(
+            module=self.module,
+            cache_dir=str(cache_dir),
+            cache_minutes=int(cache_minutes),
+        )
 
         self._validate_inputs()
 
@@ -264,16 +282,35 @@ class InfluxDownloads:
         """
         Resolve latest InfluxDB 3 version from the official install script.
 
+        The install script defines edition-specific defaults (current layout)::
+
+            INFLUXDB_OSS_VERSION="x.y.z"   # core
+            INFLUXDB_ENT_VERSION="x.y.z"   # enterprise
+            INFLUXDB_VERSION="${INFLUXDB_OSS_VERSION}"
+
+        Older revisions used a single literal assignment::
+
+            INFLUXDB_VERSION="x.y.z"
+
         Returns:
             str: version "x.y.z"
         """
         self.module.log("InfluxDownloads::_resolve_latest_v3()")
 
         text = self._http_text(self._V3_INSTALL_SCRIPT_URL, headers={"Accept": "*/*"})
+
+        # Edition-specific default (current script layout).
+        edition_var = "INFLUXDB_ENT_VERSION" if self.edition == "enterprise" else "INFLUXDB_OSS_VERSION"
+        m = re.search(rf'{edition_var}="(\d+\.\d+\.\d+)"', text)
+        if m:
+            return m.group(1)
+
+        # Backward compatibility: older revisions used a literal INFLUXDB_VERSION.
         m = re.search(r'INFLUXDB_VERSION="(\d+\.\d+\.\d+)"', text)
-        if not m:
-            raise RuntimeError("Could not parse latest InfluxDB 3 version from install script.")
-        return m.group(1)
+        if m:
+            return m.group(1)
+
+        raise RuntimeError("Could not parse latest InfluxDB 3 version from install script.")
 
     def _resolve_latest_v2(self) -> str:
         """
@@ -531,10 +568,20 @@ class InfluxDownloads:
         """
         self.module.log(f"InfluxDownloads::_http_head(url: {url}, headers: {headers})")
 
+        cached = self.cache.get("head", url)
+        if cached is not None:
+            try:
+                cached_status = int(cached.strip())
+            except ValueError:
+                cached_status = 0
+            if 200 <= cached_status < 300:
+                return
+
         _, info = self._fetch(url, method="HEAD", headers=headers)
         status = int(info.get("status") or 0)
 
         if 200 <= status < 300:
+            self.cache.set("head", url, str(status))
             return
 
         msg = info.get("msg") or ""
@@ -579,12 +626,18 @@ class InfluxDownloads:
         """
         self.module.log(f"InfluxDownloads::_http_text(url: {url}, headers: {headers})")
 
+        cached = self.cache.get("get", url)
+        if cached is not None:
+            return cached
+
         resp, info = self._fetch(url, method="GET", headers=headers)
         status = int(info.get("status") or 0)
 
         if 200 <= status < 300:
             body = resp.read() if resp else b""
-            return body.decode("utf-8", errors="replace")
+            text = body.decode("utf-8", errors="replace")
+            self.cache.set("get", url, text)
+            return text
 
         msg = info.get("msg") or ""
         ctx = context or {}

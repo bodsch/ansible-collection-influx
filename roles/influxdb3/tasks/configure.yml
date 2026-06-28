@@ -1,9 +1,5 @@
 ---
 
-- name: merge influxdb serve configuration between defaults and custom
-  ansible.builtin.set_fact:
-    influxdb3_serve: "{{ influxdb3_defaults_serve | combine(influxdb3_serve, recursive=True) }}"
-
 - name: define influxdb http service
   ansible.builtin.set_fact:
     influxdb3_http: "{{ influxdb3_serve.http | bodsch.influx.influxdb_bind(core_version=influxdb3_main_version) }}"

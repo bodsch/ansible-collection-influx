@@ -58,6 +58,18 @@ options:
     description: The HTTP C(User-Agent) header value.
     type: str
     default: "ansible-influx-downloads"
+  cache_dir:
+    description:
+      - Directory for the on-disk cache of remote lookups (install script,
+        GitHub API responses, C(.sha256) files and HEAD existence checks).
+      - C(~) is expanded. An empty value disables caching.
+    type: str
+    default: "~/.cache/ansible/influx/downloads"
+  cache_minutes:
+    description:
+      - TTL of cached lookups in minutes. Set to C(0) to disable caching.
+    type: int
+    default: 60
 author:
   - Bodo Schulz (@bodsch)
 """
@@ -107,6 +119,8 @@ def main() -> None:
             timeout=dict(type="int", default=15),
             validate_certs=dict(type="bool", default=True),
             user_agent=dict(type="str", default="ansible-influx-downloads"),
+            cache_dir=dict(type="str", default=InfluxDownloads._DEFAULT_CACHE_DIR),
+            cache_minutes=dict(type="int", default=InfluxDownloads._DEFAULT_CACHE_MINUTES),
         ),
         supports_check_mode=True,
     )
