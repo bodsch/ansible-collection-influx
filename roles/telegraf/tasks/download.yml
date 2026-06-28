@@ -1,0 +1,141 @@
+---
+
+- name: get latest release
+  when:
+    - not running_in_check_mode
+    - telegraf_version == "latest"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  block:
+    - name: get latest release
+      delegate_to: localhost
+      become: false
+      run_once: true
+      bodsch.scm.github_latest:
+        project: influxdata
+        repository: telegraf
+        user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+        password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+      register: _latest_release
+
+    - name: re-define telegraf_version
+      ansible.builtin.set_fact:
+        telegraf_version: "{{ _latest_release.latest_release }}"
+
+- name: define delegate instance for download handling
+  when:
+    - not running_in_check_mode
+    - telegraf_direct_download
+  ansible.builtin.set_fact:
+    telegraf_delegate_to: "{{ ansible_facts.host }}"
+    telegraf_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/telegraf', true) }}/{{ telegraf_version }}"
+
+- name: create download directory
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ telegraf_delegate_to }}"
+  run_once: "{{ 'false' if telegraf_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ telegraf_local_tmp_directory }}"
+    state: directory
+    mode: "0750"
+  check_mode: false
+
+- name: detect the downloaded telegraf archive
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ telegraf_delegate_to }}"
+  run_once: "{{ 'false' if telegraf_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ telegraf_local_tmp_directory }}/{{ __telegraf_files.archive }}"
+  register: stat_telegraf_archive
+
+- name: download
+  when:
+    - not running_in_check_mode
+    - stat_telegraf_archive.stat is defined
+    - not stat_telegraf_archive.stat.exists | default('false') | bool
+  block:
+    # - name: checksum
+    #   become: false
+    #   delegate_to: localhost
+    #   run_once: true
+    #   block:
+    #     - name: get checksum list
+    #       bodsch.scm.github_checksum:
+    #         project: influxdb
+    #         repository: telegraf
+    #         checksum_file: sha256sums.txt
+    #         user: "{{ lookup('env', 'GH_USER') | default(omit) }}"
+    #         password: "{{ lookup('env', 'GH_TOKEN') | default(omit) }}"
+    #         architecture: "{{ ansible_facts.architecture }}"
+    #         system: "{{ ansible_facts.system }}"
+    #         version: "v{{ telegraf_version }}"
+    #       register: _latest_checksum
+    #
+    #     - name: define checksum for {{ system_architecture }} architecture
+    #       ansible.builtin.set_fact:
+    #         __telegraf_checksum: "sha256:{{ _latest_checksum.checksum }}"
+    #       when:
+    #         - _latest_checksum.rc == 0
+    #         - _latest_checksum.checksum is defined
+    #         - _latest_checksum.checksum | string | length > 0
+
+    - name: download telegraf binary archive
+      become: false
+      delegate_to: "{{ telegraf_delegate_to }}"
+      run_once: "{{ 'false' if telegraf_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ telegraf_release_download_url }}/{{ __telegraf_files.archive }}"
+        dest: "{{ telegraf_local_tmp_directory }}/{{ __telegraf_files.archive }}"
+        checksum: "{{ __telegraf_checksum | default(omit) }}"
+        mode: "0640"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 5
+      delay: 2
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ telegraf_delegate_to }}"
+      run_once: "{{ 'false' if telegraf_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ telegraf_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+- name: detect extracted binary
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ telegraf_delegate_to }}"
+  run_once: "{{ 'false' if telegraf_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ telegraf_local_tmp_directory }}/usr/bin/{{ __telegraf_files.binary }}"
+  register: stat_telegraf_binary
+
+- name: extract telegraf archive
+  when:
+    - not running_in_check_mode
+    - stat_telegraf_binary.stat is defined
+    - not stat_telegraf_binary.stat.exists | default('false') | bool
+  become: false
+  delegate_to: "{{ telegraf_delegate_to }}"
+  run_once: "{{ 'false' if telegraf_direct_download else 'true' }}"
+  ansible.builtin.unarchive:
+    src: "{{ telegraf_local_tmp_directory }}/{{ __telegraf_files.archive }}"
+    dest: "{{ telegraf_local_tmp_directory }}/"
+    # copy: false
+    extra_opts:
+      - --strip-components=2
+
+...

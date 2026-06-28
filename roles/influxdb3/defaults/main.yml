@@ -1,0 +1,31 @@
+---
+
+# see: https://docs.influxdata.com/influxdb/v2/reference/release-notes/influxdb/
+influxdb3_version: "3.0.0"
+
+influxdb3_release: {}
+  # download_url: ""
+  # api_url: ""
+  # files:
+  #   influxdb: ""
+  #   influx_client: ""
+  # binaries:
+  #   influxd: ""
+  #   influx: ""
+
+influxdb3_system_user: influxdb
+influxdb3_system_group: influxdb
+influxdb3_config_dir: /etc/influxdb3
+influxdb3_storage_dir: /var/lib/influxdb3
+
+influxdb3_direct_download: false
+
+# User-facing override for the `influxdb3 serve` parameters. Merged (recursive) over
+# influxdb3_defaults_serve (vars/main.yml) in tasks/prepare.yml. See that catalogue for
+# every available option, its environment variable and minimum InfluxDB version.
+influxdb3_serve: {}
+
+# InfluxDB 3 native databases (only used when influxdb3_main_version == 3)
+influxdb3_databases: {}
+
+...

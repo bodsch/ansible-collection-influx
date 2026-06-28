@@ -1,0 +1,26 @@
+---
+
+influxdb3_version: latest
+
+influxdb3_serve:
+  # log-filter directive, e.g. debug, info, error (default info)
+  log:
+    filter: debug
+
+influxdb3_organizations:
+  main-org:
+    state: create
+    description: Main organization
+  guest-org:
+    state: create
+
+influxdb3_users:
+  admin:
+    state: create
+    operator: false
+    organization:
+      name: main-org
+      admin: true
+    password: LA9NMTb6WZ285zPGPgyUJEucuJUjr6W7
+
+...

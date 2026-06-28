@@ -1,0 +1,12 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+#
+# EnvironmentFile for the systemd unit (ExecStart = /usr/bin/influxd $OPTIONS).
+#
+# influxd is configured entirely through its config file. INFLUXD_CONFIG_PATH points influxd
+# at the rendered YAML config; the complete option catalogue lives in vars/main.yml
+# (influxdb2_defaults_service) and is rendered into {{ influxdb2_config_dir }}/config.yml.
+# No CLI flags are passed here on purpose - flags would override the config file.
+
+INFLUXD_CONFIG_PATH={{ influxdb2_config_dir }}/config.yml
+OPTIONS=""

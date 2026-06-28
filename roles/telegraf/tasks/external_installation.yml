@@ -1,0 +1,40 @@
+---
+
+- name: detect our installation path '{{ telegraf_install_path | dirname }}'
+  when:
+    - not running_in_check_mode
+  ansible.builtin.stat:
+    path: "{{ telegraf_install_path | dirname }}"
+    get_checksum: false
+  register: stat_telegraf_path
+  ignore_errors: true
+
+- name: old installation
+  when:
+    - not running_in_check_mode
+    - stat_telegraf_path is defined
+    - stat_telegraf_path.stat is defined
+    - stat_telegraf_path.stat.isdir is defined
+    - not stat_telegraf_path.stat.isdir
+  block:
+    - name: stop old service
+      ansible.builtin.service:
+        name: prometheus
+        state: stopped
+        enabled: false
+      notify:
+        - daemon-reload
+
+    - name: remove installed systemd unit
+      ansible.builtin.file:
+        state: absent
+        path: /etc/systemd/system/telegraf.service
+      when:
+        - ansible_facts.service_mgr | lower == "systemd"
+
+    - name: remove installed telegraf
+      ansible.builtin.file:
+        state: absent
+        path: "{{ stat_telegraf_path.stat.path }}"
+
+...

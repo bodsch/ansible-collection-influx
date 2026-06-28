@@ -1,0 +1,17 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+#
+# `influxdb3 serve` has no native config file - it is configured purely via CLI flags
+# (and INFLUXDB3_* env vars). This EnvironmentFile (consumed by the systemd unit as
+# `ExecStart = /usr/bin/influxdb3 $OPTIONS`) therefore carries the complete flag set.
+#
+# Every option is opt-in (only rendered when set in `influxdb3_serve`) and gated to its
+# real introduction version. The full, documented catalogue lives in vars/main.yml
+# (influxdb3_defaults_serve); the flag rendering is shared with the OpenRC path via
+# templates/default/serve_options.j2. Edit values via the user-facing `influxdb3_serve`.
+
+{% if influxdb3_main_version | int == 3 %}
+OPTIONS="
+{% include 'default/serve_options.j2' %}
+"
+{% endif %}

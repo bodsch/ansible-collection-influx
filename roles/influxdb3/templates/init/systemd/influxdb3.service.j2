@@ -1,0 +1,34 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+
+[Unit]
+Description       = InfluxDB is an open-source, distributed, time series database
+Documentation     = https://docs.influxdata.com/influxdb/
+After             = network-online.target
+
+[Service]
+Type              = simple
+Environment       = "GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count) }}"
+Environment       = MAX_OPEN_FILES=10000
+Environment       = RESTART_ON_UPGRADE=true
+EnvironmentFile   = {{ influxdb3_defaults_directory }}/influxdb3
+
+User              = {{ influxdb3_system_user }}
+Group             = {{ influxdb3_system_group }}
+
+WorkingDirectory  = {{ influxdb3_storage_dir }}
+
+ExecReload        = /bin/kill -HUP $MAINPID
+
+# ExecStartPre      = /usr/bin/influxdb -config.file {{ influxdb3_config_dir }}/influxdb.yml -verify-config -log.level debug
+ExecStartPre      = /bin/chown --recursive {{ influxdb3_system_user }}:{{ influxdb3_system_group }} {{ influxdb3_storage_dir }}
+ExecStart         = /usr/bin/influxdb3 $OPTIONS
+
+LimitNOFILE       = 65000
+SyslogIdentifier  = influxdb3
+Restart           = always
+RestartSec        = 30
+
+[Install]
+## Alias             = influxd3.service
+WantedBy          = multi-user.target

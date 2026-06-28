@@ -1,0 +1,153 @@
+---
+
+- name: user and group handling
+  when:
+    - not running_in_check_mode
+    - influxdb3_system_user != "root"
+  block:
+    - name: create influxdb group
+      ansible.builtin.group:
+        name: "{{ influxdb3_system_group }}"
+        state: present
+        system: true
+
+    - name: create influxdb user
+      ansible.builtin.user:
+        name: "{{ influxdb3_system_user }}"
+        groups: "{{ influxdb3_system_group }}"
+        append: true
+        shell: /usr/sbin/nologin
+        system: true
+        createhome: false
+        home: "{{ influxdb3_storage_dir }}"
+
+- name: create install directory trees
+  bodsch.core.directories:
+    owner: "{{ influxdb3_system_user }}"
+    group: "{{ influxdb3_system_group }}"
+    mode: "0755"
+    paths:
+      - path: "{{ influxdb3_install_path }}"
+      - path: "{{ influxdb3_storage_dir }}"
+      - path: "{{ influxdb3_storage_dir }}/meta"
+      - path: "{{ influxdb3_storage_dir }}/data"
+      - path: "{{ influxdb3_storage_dir }}/wal"
+
+- name: detect extracted binary file for influxdb3
+  ansible.builtin.stat:
+    path: "{{ influxdb3_install_path }}/influxdb3"
+  register: stat_influxdb3_file_binary
+
+- name: core
+  when:
+    - stat_influxdb3_file_binary.stat is defined
+    - not stat_influxdb3_file_binary.stat.exists | default('false') | bool
+  block:
+
+    - name: propagate influx core archive
+      ansible.builtin.copy:
+        src: "{{ influxdb3_local_tmp_directory }}/{{ influxdb3_download_artifact }}"
+        dest: "{{ influxdb3_install_path }}/"
+        remote_src: "{{ 'true' if influxdb3_direct_download else 'false' }}"
+
+    - name: extract influxdb archiv
+      ansible.builtin.unarchive:
+        src: "{{ influxdb3_install_path }}/{{ influx3_downloads.download_artifact }}"
+        dest: "{{ influxdb3_install_path }}/"
+        owner: "{{ influxdb3_system_user }}"
+        group: "{{ influxdb3_system_group }}"
+        copy: false
+        extra_opts:
+          - --strip-components=1
+
+    - name: remove influx core archive
+      ansible.builtin.file:
+        path: "{{ influxdb3_install_path }}/{{ influxdb3_download_artifact }}"
+        state: absent
+
+  rescue:
+    - name: delete install directory
+      ansible.builtin.file:
+        path: "{{ influxdb3_install_path }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred during the installation of the binary.
+
+- name: detect activated influxdb3
+  ansible.builtin.stat:
+    path: "/usr/bin/influxdb3"
+  register: stat_influxdb3_activated
+
+- name: detect, if influx {{ influxdb3_version }} activated
+  ansible.builtin.set_fact:
+    influxdb3_must_activated: "{{ not stat_influxdb3_activated.stat | bodsch.core.linked_version(install_path=influxdb3_install_path, version=influxdb3_version) }}"
+
+- name: activate influx
+  when:
+    - influxdb3_must_activated | bool
+  block:
+    - name: create link to influxdb3 binary
+      ansible.builtin.file:
+        src: "{{ influxdb3_install_path }}/influxdb3"
+        dest: "/usr/bin/influxdb3"
+        state: link
+        force: true
+      notify:
+        - restart influxdb3
+
+- name: systemd
+  when:
+    - ansible_facts.service_mgr | lower == "systemd"
+  block:
+
+    - name: create influxdb run configuration
+      ansible.builtin.template:
+        src: "default/influxdb3.j2"
+        dest: "{{ influxdb3_defaults_directory }}/influxdb3"
+        force: true
+        owner: root
+        group: "{{ influxdb3_system_group }}"
+        mode: "0640"
+      notify:
+        - restart influxdb3
+
+    - name: create systemd service unit
+      ansible.builtin.template:
+        src: "init/systemd/influxdb3.service.j2"
+        dest: "{{ systemd_lib_directory }}/influxdb3.service"
+        owner: root
+        group: root
+        mode: "0644"
+      notify:
+        - systemd daemon reload
+
+- name: openrc
+  when:
+    - ansible_facts.service_mgr | lower == "openrc"
+  block:
+    - name: create openrc service configuration
+      ansible.builtin.template:
+        src: "init/openrc/conf.d/influxdb.j2"
+        dest: "/etc/conf.d/influxdb3"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: create openrc init configuration
+      ansible.builtin.template:
+        src: "init/openrc/init.d/influxdb.j2"
+        dest: "/etc/init.d/influxdb3"
+        owner: root
+        group: root
+        mode: "0750"
+
+- name: create custom fact file
+  bodsch.core.facts:
+    name: influxdb3
+    facts:
+      version:
+        core: "{{ influxdb3_version }}"
+
+...

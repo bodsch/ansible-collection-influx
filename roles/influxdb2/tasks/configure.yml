@@ -1,0 +1,74 @@
+---
+
+- name: define influxdb http service
+  ansible.builtin.set_fact:
+    influxdb2_http: "{{ influxdb2_service.http | bodsch.influx.influxdb_bind(core_version=influxdb2_main_version) }}"
+
+- name: create influxdb config directory
+  ansible.builtin.file:
+    path: "{{ influxdb2_config_dir }}"
+    state: directory
+    owner: "{{ influxdb2_system_user }}"
+    group: root
+    mode: "0755"
+
+- name: create influxdb configuration
+  ansible.builtin.template:
+    src: etc/influxdb/config.yml.j2
+    dest: "{{ influxdb2_config_dir }}/config.yml"
+    owner: root
+    group: "{{ influxdb2_system_group }}"
+    mode: "0640"
+  notify:
+    - restart influxdb2
+
+- name: restart influxdb if needed
+  ansible.builtin.meta: flush_handlers
+
+- name: ensure influxdb is started
+  become: true
+  ansible.builtin.service:
+    name: influxdb2
+    state: started
+
+- name: ensure influxdb is up and running
+  bodsch.influx.influxdb2_ping:
+    host: "{{ influxdb2_http }}"
+  retries: 10
+  delay: 5
+  register: _ping
+  until: _ping.reachable
+  changed_when: false
+
+- name: set influxdb default user, organization, and bucket
+  bodsch.influx.influxdb2_setup:
+    host: "{{ influxdb2_http }}"
+    org: "{{ influxdb2_primary.organization }}"
+    bucket: "{{ influxdb2_primary.bucket }}"
+    username: "{{ influxdb2_primary.username }}"
+    password: "{{ influxdb2_primary.password }}"
+    token: "{{ influxdb2_primary.token }}"
+  register: _setup
+
+- name: ensure organizations exists
+  bodsch.influx.influxdb2_organizations:
+    host: "{{ influxdb2_http }}"
+    token: "{{ influxdb2_primary.token }}"
+    organizations: "{{ influxdb2_organizations }}"
+  register: _org
+
+- name: ensure users exist
+  bodsch.influx.influxdb2_users:
+    host: "{{ influxdb2_http }}"
+    token: "{{ influxdb2_primary.token }}"
+    users: "{{ influxdb2_users }}"
+  register: _users
+
+- name: ensure buckets exist
+  bodsch.influx.influxdb2_buckets:
+    host: "{{ influxdb2_http }}"
+    token: "{{ influxdb2_primary.token }}"
+    buckets: "{{ influxdb2_buckets }}"
+  register: _buckets
+
+...

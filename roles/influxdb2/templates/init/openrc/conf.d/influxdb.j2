@@ -1,0 +1,18 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+#
+# OpenRC configuration for influxdb2, sourced by /etc/init.d/influxdb2.
+#
+# influxd is configured through its config file (no CLI flags). The init script exports
+# INFLUXD_CONFIG_PATH from ${config}; the full option catalogue is rendered into the YAML
+# config from influxdb2_service (see vars/main.yml: influxdb2_defaults_service).
+
+# GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count) }}
+
+config={{ influxdb2_config_dir }}/config.yml
+
+user="{{ influxdb2_system_user }}"
+group="{{ influxdb2_system_group }}"
+
+# No CLI flags - configuration comes from ${config}.
+influxd_opts=""

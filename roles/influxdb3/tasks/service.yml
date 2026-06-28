@@ -1,0 +1,13 @@
+---
+
+- name: restart influxdb3 if needed
+  ansible.builtin.meta: flush_handlers
+
+- name: ensure influxdb3 is enabled on boot
+  become: true
+  ansible.builtin.service:
+    name: influxdb3
+    enabled: true
+    state: started
+
+...

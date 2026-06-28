@@ -1,0 +1,9 @@
+.tox
+.galaxy_install_info
+*kate-swp
+__pycache__
+.cache
+.directory
+hooks
+roles/*/test-requirements.txt
+roles/*/tox.ini

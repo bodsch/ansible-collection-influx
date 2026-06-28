@@ -1,0 +1,21 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+# {{ ansible_managed }}
+#
+# OpenRC configuration for influxdb3, sourced by /etc/init.d/influxdb3.
+#
+# `influxdb3 serve` has no native config file - it is configured purely via CLI flags.
+# The flag rendering is shared with the systemd path (templates/default/serve_options.j2);
+# the full, version-gated catalogue is documented in vars/main.yml (influxdb3_defaults_serve).
+# Edit values via the user-facing `influxdb3_serve`.
+
+# Limit the Go runtime to the available CPUs (mirrors the systemd unit).
+export GOMAXPROCS={{ ansible_facts.processor_vcpus | default(ansible_facts.processor_count) }}
+
+influxdb3_user="{{ influxdb3_system_user }}"
+influxdb3_group="{{ influxdb3_system_group }}"
+
+{% if influxdb3_main_version | int == 3 %}
+INFLUXDB3_OPTS="
+{% include 'default/serve_options.j2' %}
+"
+{% endif %}

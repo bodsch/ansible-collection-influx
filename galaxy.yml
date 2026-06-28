@@ -1,0 +1,44 @@
+---
+namespace: bodsch
+name: influx
+
+version: 1.0.0
+
+readme: README.md
+
+authors:
+  - Bodo Schulz <bodo@boone-schulz.de>
+
+description: collection of ansible roles for influx services
+
+license:
+  - Apache-2.0
+
+license_file: ''
+
+tags:
+  - monitoring
+
+dependencies:
+ ansible.utils: "*"
+ bodsch.core: ">=2.13.5"
+ bodsch.systemd: ">=1.4.1"
+ bodsch.scm: ">=1.11.0"
+
+repository: https://github.com/bodsch/ansible-collection-influx
+documentation: https://github.com/bodsch/ansible-collection-influx/README.md
+homepage: https://github.com/bodsch/ansible-collection-influx
+issues: https://github.com/bodsch/ansible-collection-influx/issues
+
+build_ignore:
+  - "*.pyc"
+  - "*.retry"
+  - ".ansible-lint"
+  - ".config"
+  - ".editorconfig"
+  - ".flake8"
+  - ".git"
+  - ".github"
+  - ".gitignore"
+  - ".yamllint"
+  - "galaxy.yml"

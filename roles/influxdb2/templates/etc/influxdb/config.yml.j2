@@ -1,0 +1,97 @@
+#jinja2: trim_blocks: True, lstrip_blocks: True
+---
+# {{ ansible_managed }}
+#
+# InfluxDB 2 (influxd) configuration file.
+# Loaded by influxd via INFLUXD_CONFIG_PATH ({{ influxdb2_config_dir }}/config.yml).
+#
+# Rendered from the clustered catalogue influxdb2_service (see vars/main.yml:
+# influxdb2_defaults_service). influxd's config keys are flat (the flag names without the
+# leading '--'); the nested source clusters are mapped onto those keys here. Only options
+# that are actually set are emitted, and options newer than 2.5 are gated to their real
+# introduction release. Unknown keys are ignored by influxd (viper), but gating keeps the
+# file valid for the running version.
+{% set s = influxdb2_service %}
+{% set v276  = (influxdb2_version == 'latest') or (influxdb2_version is version_compare('2.7.6',  '>=')) %}
+{% set v2711 = (influxdb2_version == 'latest') or (influxdb2_version is version_compare('2.7.11', '>=')) %}
+{% set cfg = {} %}
+{# ---- logging ---- #}
+{% if s.log.level | default('') | string | length > 0 %}{% set _ = cfg.update({'log-level': s.log.level}) %}{% endif %}
+{# ---- server / instance ---- #}
+{% if s.instance_id | default('') | string | length > 0 %}{% set _ = cfg.update({'instance-id': s.instance_id}) %}{% endif %}
+{% if s.metrics.enabled is defined and not (s.metrics.enabled | bool) %}{% set _ = cfg.update({'metrics-disabled': true}) %}{% endif %}
+{% if s.ui.enabled is defined and not (s.ui.enabled | bool) %}{% set _ = cfg.update({'ui-disabled': true}) %}{% endif %}
+{% if s.reporting.disabled | default(false) | bool %}{% set _ = cfg.update({'reporting-disabled': true}) %}{% endif %}
+{% if s.server.no_tasks | default(false) | bool %}{% set _ = cfg.update({'no-tasks': true}) %}{% endif %}
+{% if s.server.pprof_disabled | default(false) | bool %}{% set _ = cfg.update({'pprof-disabled': true}) %}{% endif %}
+{% if s.server.flux_log_enabled | default(false) | bool %}{% set _ = cfg.update({'flux-log-enabled': true}) %}{% endif %}
+{% if s.server.hardening_enabled | default(false) | bool %}{% set _ = cfg.update({'hardening-enabled': true}) %}{% endif %}
+{% if s.server.secret_store | default('') | string | length > 0 %}{% set _ = cfg.update({'secret-store': s.server.secret_store}) %}{% endif %}
+{% if s.server.session_length | default('') | string | length > 0 %}{% set _ = cfg.update({'session-length': s.server.session_length | int}) %}{% endif %}
+{% if s.server.session_renew_disabled | default(false) | bool %}{% set _ = cfg.update({'session-renew-disabled': true}) %}{% endif %}
+{% if s.server.tracing_type | default('') | string | length > 0 %}{% set _ = cfg.update({'tracing-type': s.server.tracing_type}) %}{% endif %}
+{% if s.server.store | default('') | string | length > 0 %}{% set _ = cfg.update({'store': s.server.store}) %}{% endif %}
+{% if (s.server.strong_passwords | default(false) | bool) and v276 %}{% set _ = cfg.update({'strong-passwords': true}) %}{% endif %}
+{% if s.server.feature_flags | default({}) | length > 0 %}{% set _ = cfg.update({'feature-flags': s.server.feature_flags}) %}{% endif %}
+{% if (s.server.pid_file | default('') | string | length > 0) and v2711 %}{% set _ = cfg.update({'pid-file': s.server.pid_file}) %}{% endif %}
+{% if (s.server.overwrite_pid_file | default(false) | bool) and v2711 %}{% set _ = cfg.update({'overwrite-pid-file': true}) %}{% endif %}
+{% if s.server.testing_always_allow_setup | default(false) | bool %}{% set _ = cfg.update({'testing-always-allow-setup': true}) %}{% endif %}
+{# ---- on-disk paths ---- #}
+{% if s.paths.bolt | default('') | string | length > 0 %}{% set _ = cfg.update({'bolt-path': s.paths.bolt}) %}{% endif %}
+{% if s.paths.engine | default('') | string | length > 0 %}{% set _ = cfg.update({'engine-path': s.paths.engine}) %}{% endif %}
+{% if s.paths.sqlite | default('') | string | length > 0 %}{% set _ = cfg.update({'sqlite-path': s.paths.sqlite}) %}{% endif %}
+{% if s.paths.assets | default('') | string | length > 0 %}{% set _ = cfg.update({'assets-path': s.paths.assets}) %}{% endif %}
+{# ---- http ---- #}
+{% if s.http.bind_address | default('') | string | length > 0 %}{% set _ = cfg.update({'http-bind-address': s.http.bind_address}) %}{% endif %}
+{% if s.http.timeouts.idle | default('') | string | length > 0 %}{% set _ = cfg.update({'http-idle-timeout': s.http.timeouts.idle}) %}{% endif %}
+{% if s.http.timeouts.read_header | default('') | string | length > 0 %}{% set _ = cfg.update({'http-read-header-timeout': s.http.timeouts.read_header}) %}{% endif %}
+{% if s.http.timeouts.read | default('') | string | length > 0 %}{% set _ = cfg.update({'http-read-timeout': s.http.timeouts.read}) %}{% endif %}
+{% if s.http.timeouts.write | default('') | string | length > 0 %}{% set _ = cfg.update({'http-write-timeout': s.http.timeouts.write}) %}{% endif %}
+{# ---- tls ---- #}
+{% if s.tls.cert | default('') | string | length > 0 %}{% set _ = cfg.update({'tls-cert': s.tls.cert}) %}{% endif %}
+{% if s.tls.key | default('') | string | length > 0 %}{% set _ = cfg.update({'tls-key': s.tls.key}) %}{% endif %}
+{% if s.tls.min_version | default('') | string | length > 0 %}{% set _ = cfg.update({'tls-min-version': s.tls.min_version | string}) %}{% endif %}
+{% if s.tls.strict_ciphers | default(false) | bool %}{% set _ = cfg.update({'tls-strict-ciphers': true}) %}{% endif %}
+{# ---- influxql ---- #}
+{% if s.influxql.max_select_buckets | default('') | string | length > 0 %}{% set _ = cfg.update({'influxql-max-select-buckets': s.influxql.max_select_buckets | int}) %}{% endif %}
+{% if s.influxql.max_select_point | default('') | string | length > 0 %}{% set _ = cfg.update({'influxql-max-select-point': s.influxql.max_select_point | int}) %}{% endif %}
+{% if s.influxql.max_select_series | default('') | string | length > 0 %}{% set _ = cfg.update({'influxql-max-select-series': s.influxql.max_select_series | int}) %}{% endif %}
+{# ---- query ---- #}
+{% if s.query.concurrency | default('') | string | length > 0 %}{% set _ = cfg.update({'query-concurrency': s.query.concurrency | int}) %}{% endif %}
+{% if s.query.initial_memory_bytes | default('') | string | length > 0 %}{% set _ = cfg.update({'query-initial-memory-bytes': s.query.initial_memory_bytes | int}) %}{% endif %}
+{% if s.query.max_memory_bytes | default('') | string | length > 0 %}{% set _ = cfg.update({'query-max-memory-bytes': s.query.max_memory_bytes | int}) %}{% endif %}
+{% if s.query.memory_bytes | default('') | string | length > 0 %}{% set _ = cfg.update({'query-memory-bytes': s.query.memory_bytes | int}) %}{% endif %}
+{% if s.query.queue_size | default('') | string | length > 0 %}{% set _ = cfg.update({'query-queue-size': s.query.queue_size | int}) %}{% endif %}
+{# ---- storage ---- #}
+{% if s.storage.cache_max_memory_size | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-cache-max-memory-size': s.storage.cache_max_memory_size}) %}{% endif %}
+{% if s.storage.cache_snapshot_memory_size | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-cache-snapshot-memory-size': s.storage.cache_snapshot_memory_size}) %}{% endif %}
+{% if s.storage.cache_snapshot_write_cold_duration | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-cache-snapshot-write-cold-duration': s.storage.cache_snapshot_write_cold_duration}) %}{% endif %}
+{% if s.storage.compact_full_write_cold_duration | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-compact-full-write-cold-duration': s.storage.compact_full_write_cold_duration}) %}{% endif %}
+{% if s.storage.compact_throughput_burst | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-compact-throughput-burst': s.storage.compact_throughput_burst}) %}{% endif %}
+{% if s.storage.max_concurrent_compactions | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-max-concurrent-compactions': s.storage.max_concurrent_compactions | int}) %}{% endif %}
+{% if s.storage.max_index_log_file_size | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-max-index-log-file-size': s.storage.max_index_log_file_size}) %}{% endif %}
+{% if s.storage.no_validate_field_size | default(false) | bool %}{% set _ = cfg.update({'storage-no-validate-field-size': true}) %}{% endif %}
+{% if s.storage.retention_check_interval | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-retention-check-interval': s.storage.retention_check_interval}) %}{% endif %}
+{% if s.storage.series_file_max_concurrent_snapshot_compactions | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-series-file-max-concurrent-snapshot-compactions': s.storage.series_file_max_concurrent_snapshot_compactions | int}) %}{% endif %}
+{% if s.storage.series_id_set_cache_size | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-series-id-set-cache-size': s.storage.series_id_set_cache_size | int}) %}{% endif %}
+{% if s.storage.shard_precreator_advance_period | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-shard-precreator-advance-period': s.storage.shard_precreator_advance_period}) %}{% endif %}
+{% if s.storage.shard_precreator_check_interval | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-shard-precreator-check-interval': s.storage.shard_precreator_check_interval}) %}{% endif %}
+{% if s.storage.tsm_use_madv_willneed | default(false) | bool %}{% set _ = cfg.update({'storage-tsm-use-madv-willneed': true}) %}{% endif %}
+{% if s.storage.validate_keys | default(false) | bool %}{% set _ = cfg.update({'storage-validate-keys': true}) %}{% endif %}
+{% if s.storage.wal_fsync_delay | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-wal-fsync-delay': s.storage.wal_fsync_delay}) %}{% endif %}
+{% if s.storage.wal_max_concurrent_writes | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-wal-max-concurrent-writes': s.storage.wal_max_concurrent_writes | int}) %}{% endif %}
+{% if s.storage.wal_max_write_delay | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-wal-max-write-delay': s.storage.wal_max_write_delay}) %}{% endif %}
+{% if (s.storage.wal_flush_on_shutdown | default(false) | bool) and v2711 %}{% set _ = cfg.update({'storage-wal-flush-on-shutdown': true}) %}{% endif %}
+{% if s.storage.write_timeout | default('') | string | length > 0 %}{% set _ = cfg.update({'storage-write-timeout': s.storage.write_timeout}) %}{% endif %}
+{# ---- vault ---- #}
+{% if s.vault.vault_addr | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-addr': s.vault.vault_addr}) %}{% endif %}
+{% if s.vault.vault_cacert | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-cacert': s.vault.vault_cacert}) %}{% endif %}
+{% if s.vault.vault_capath | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-capath': s.vault.vault_capath}) %}{% endif %}
+{% if s.vault.vault_client_cert | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-client-cert': s.vault.vault_client_cert}) %}{% endif %}
+{% if s.vault.vault_client_key | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-client-key': s.vault.vault_client_key}) %}{% endif %}
+{% if s.vault.vault_client_timeout | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-client-timeout': s.vault.vault_client_timeout}) %}{% endif %}
+{% if s.vault.vault_max_retries | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-max-retries': s.vault.vault_max_retries | int}) %}{% endif %}
+{% if s.vault.vault_skip_verify | default(false) | bool %}{% set _ = cfg.update({'vault-skip-verify': true}) %}{% endif %}
+{% if s.vault.vault_tls_server_name | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-tls-server-name': s.vault.vault_tls_server_name}) %}{% endif %}
+{% if s.vault.vault_token | default('') | string | length > 0 %}{% set _ = cfg.update({'vault-token': s.vault.vault_token}) %}{% endif %}
+{{ cfg | to_nice_yaml(indent=2) }}

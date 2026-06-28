@@ -1,0 +1,70 @@
+---
+
+- name: create influxdb config directory
+  ansible.builtin.file:
+    path: "{{ influxdb2_config_dir }}"
+    state: directory
+    owner: "{{ influxdb2_system_user }}"
+    group: root
+    mode: "0755"
+
+- name: create influxdb configuration
+  ansible.builtin.template:
+    src: etc/influxdb/config.yml.j2
+    dest: "{{ influxdb2_config_dir }}/config.yml"
+    owner: root
+    group: "{{ influxdb2_system_group }}"
+    mode: "0644"
+  notify:
+    - restart influxdb2
+
+- name: ensure influxdb is started
+  become: true
+  ansible.builtin.service:
+    name: influxdb2
+    state: started
+
+# TODO
+# define influxdb2_url
+
+- name: ensure influxdb is up and running
+  bodsch.influx.influxdb2_ping:
+    host: "http://127.0.0.1:8086"
+  retries: 10
+  delay: 5
+  register: _ping
+  until: _ping.reachable
+  changed_when: false
+
+- name: set influxdb default user, organization, and bucket
+  bodsch.influx.influxdb2_setup:
+    host: "http://127.0.0.1:8086"
+    org: "{{ influxdb2_primary.organization }}"
+    bucket: "{{ influxdb2_primary.bucket }}"
+    username: "{{ influxdb2_primary.username }}"
+    password: "{{ influxdb2_primary.password }}"
+    token: "{{ influxdb2_primary.token }}"
+  register: _setup
+
+- name: ensure organizations exists
+  bodsch.influx.influxdb2_organizations:
+    host: "http://127.0.0.1:8086"
+    token: "{{ influxdb2_primary.token }}"
+    organizations: "{{ influxdb2_organizations }}"
+  register: _org
+
+- name: ensure users exist
+  bodsch.influx.influxdb2_users:
+    host: "http://127.0.0.1:8086"
+    token: "{{ influxdb2_primary.token }}"
+    users: "{{ influxdb2_users }}"
+  register: _users
+
+- name: ensure buckets exist
+  bodsch.influx.influxdb2_buckets:
+    host: "http://127.0.0.1:8086"
+    token: "{{ influxdb2_primary.token }}"
+    buckets: "{{ influxdb2_buckets }}"
+  register: _buckets
+
+...

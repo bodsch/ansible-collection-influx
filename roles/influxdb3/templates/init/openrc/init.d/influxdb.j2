@@ -1,0 +1,50 @@
+#!/sbin/openrc-run
+# {{ ansible_managed }}
+#
+# OpenRC service for InfluxDB 3. Runtime options come from /etc/conf.d/influxdb3
+# (INFLUXDB3_OPTS), which already includes the `serve` subcommand and all flags.
+
+name="influxdb3"
+description="InfluxDB is an open-source, distributed, time series database"
+description_reload="Reload the configuration (SIGHUP)"
+
+: "${influxdb3_user:={{ influxdb3_system_user }}}"
+: "${influxdb3_group:={{ influxdb3_system_group }}}"
+: "${INFLUXDB3_OPTS:=}"
+
+command="/usr/bin/influxdb3"
+command_args="${INFLUXDB3_OPTS}"
+command_user="${influxdb3_user}:${influxdb3_group}"
+directory="{{ influxdb3_storage_dir }}"
+pidfile="/run/${name}.pid"
+
+# Supervised process log destinations.
+output_log="${output_log:-/var/log/influxdb3/influxdb3.log}"
+error_log="${error_log:-/var/log/influxdb3/influxdb3.log}"
+
+# Supervise the process: restart on exit (mirrors systemd Restart=always / RestartSec=30).
+supervisor="supervise-daemon"
+respawn_delay=30
+respawn_max=0
+
+# Raise the open-file limit (mirrors the systemd unit LimitNOFILE).
+rc_ulimit="-n 65000"
+
+extra_started_commands="reload"
+
+depend() {
+    need net
+    after firewall
+}
+
+start_pre() {
+    checkpath --directory --owner "${influxdb3_user}:${influxdb3_group}" --mode 0750 "{{ influxdb3_storage_dir }}"
+    checkpath --directory --owner "${influxdb3_user}:${influxdb3_group}" --mode 0750 "$(dirname "${output_log}")"
+    return 0
+}
+
+reload() {
+    ebegin "Reloading ${name}"
+    supervise-daemon "${name}" --pidfile "${pidfile}" --signal HUP
+    eend $?
+}

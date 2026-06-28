@@ -1,0 +1,92 @@
+
+## -----------------------------------------------------------------
+{# Rendered from telegraf_config_agent (see vars/main.yml: telegraf_defaults_config_agent).
+   Options newer than the role baseline (1.25) are gated to their real telegraf version;
+   a 'latest' version satisfies every gate. logtarget is deprecated since 1.32 (removed in
+   1.40) and is replaced by logformat from 1.32 onwards. #}
+{% set a = telegraf_config_agent %}
+{% set v126 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.26.0', '>=')) %}
+{% set v127 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.27.0', '>=')) %}
+{% set v128 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.28.0', '>=')) %}
+{% set v130 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.30.0', '>=')) %}
+{% set v131 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.31.0', '>=')) %}
+{% set v132 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.32.0', '>=')) %}
+{% set v133 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.33.0', '>=')) %}
+{% set v138 = (telegraf_version == 'latest') or (telegraf_version is version_compare('1.38.0', '>=')) %}
+
+[agent]
+  interval = "{{ a.interval }}"
+  round_interval = {{ a.round_interval | bool | ternary('true', 'false') }}
+  metric_batch_size = {{ a.metric_batch_size }}
+  metric_buffer_limit = {{ a.metric_buffer_limit }}
+  collection_jitter = "{{ a.collection_jitter }}"
+{% if a.collection_offset | default('') | string | length > 0 %}
+  collection_offset = "{{ a.collection_offset }}"
+{% endif %}
+  flush_interval = "{{ a.flush_interval }}"
+  flush_jitter = "{{ a.flush_jitter }}"
+  precision = "{{ a.precision }}"
+{# ---- metric buffering (disk-backed buffer since 1.32) ---- #}
+{% if a.buffer_strategy | default('') | string | length > 0 and v132 %}
+  buffer_strategy = "{{ a.buffer_strategy }}"
+{% endif %}
+{% if a.buffer_directory | default('') | string | length > 0 and v132 %}
+  buffer_directory = "{{ a.buffer_directory }}"
+{% endif %}
+{% if a.buffer_disk_sync | default('') | string | length > 0 and v138 %}
+  buffer_disk_sync = {{ a.buffer_disk_sync | bool | ternary('true', 'false') }}
+{% endif %}
+{# ---- logging ---- #}
+  debug = {{ a.debug | bool | ternary('true', 'false') }}
+  quiet = {{ a.quiet | bool | ternary('true', 'false') }}
+{% if not v132 %}
+  {% if a.logtarget | default('') in ['file', 'stderr', 'eventlog'] %}
+  logtarget = "{{ a.logtarget }}"
+  {% endif %}
+{% else %}
+  {% if a.logformat | default('') in ['text', 'structured', 'eventlog'] %}
+  logformat = "{{ a.logformat }}"
+  {% endif %}
+  {% if a.structured_log_message_key | default('') | string | length > 0 and v133 %}
+  structured_log_message_key = "{{ a.structured_log_message_key }}"
+  {% endif %}
+{% endif %}
+{% if a.logfile | default('') | string | length > 0 %}
+  logfile = "{{ a.logfile }}"
+{% endif %}
+{% if a.logfile_rotation_interval | default('') | string | length > 0 %}
+  logfile_rotation_interval = "{{ a.logfile_rotation_interval }}"
+{% endif %}
+{% if a.logfile_rotation_max_size | default('') | string | length > 0 %}
+  logfile_rotation_max_size = "{{ a.logfile_rotation_max_size }}"
+{% endif %}
+{% if a.logfile_rotation_max_archives | default('') | string | length > 0 %}
+  logfile_rotation_max_archives = {{ a.logfile_rotation_max_archives }}
+{% endif %}
+{% if a.log_with_timezone | default('') | string | length > 0 %}
+  log_with_timezone = "{{ a.log_with_timezone }}"
+{% endif %}
+{# ---- host / tags ---- #}
+  hostname = "{{ a.hostname }}"
+  omit_hostname = {{ a.omit_hostname | bool | ternary('true', 'false') }}
+{% if (a.always_include_local_tags | default(false) | bool) and v127 %}
+  always_include_local_tags = true
+{% endif %}
+{% if (a.always_include_global_tags | default(false) | bool) and v128 %}
+  always_include_global_tags = true
+{% endif %}
+{# ---- processing / state ---- #}
+{% if a.skip_processors_after_aggregators | default('') | string | length > 0 and v130 %}
+  skip_processors_after_aggregators = {{ a.skip_processors_after_aggregators | bool | ternary('true', 'false') }}
+{% endif %}
+{% if a.statefile | default('') | string | length > 0 and v126 %}
+  statefile = "{{ a.statefile }}"
+{% endif %}
+{% if a.config_url_retry_attempts | default('') | string | length > 0 and v131 %}
+  config_url_retry_attempts = {{ a.config_url_retry_attempts }}
+{% endif %}
+{% if a.snmp_translator | default('') | string | length > 0 %}
+  snmp_translator = "{{ a.snmp_translator }}"
+{% endif %}
+
+## -----------------------------------------------------------------

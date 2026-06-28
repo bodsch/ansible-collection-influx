@@ -1,0 +1,27 @@
+---
+
+influxdb2_version: latest
+influxdb2_cli_version: "2.7.5"
+
+influxdb2_service:
+  # supported log levels are debug, info, and error (default info)
+  log:
+    level: debug
+
+influxdb2_organizations:
+  main-org:
+    state: create
+    description: Main organization
+  guest-org:
+    state: create
+
+influxdb2_users:
+  admin:
+    state: create
+    operator: false
+    organization:
+      name: main-org
+      admin: true
+    password: LA9NMTb6WZ285zPGPgyUJEucuJUjr6W7
+
+...

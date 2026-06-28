@@ -1,0 +1,82 @@
+---
+
+- name: detect download informations
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: localhost
+  run_once: true
+  bodsch.influx.influx_download_data:
+    major_version: 3
+    version: "{{ influxdb3_version }}"
+  register: influx3_downloads
+
+- name: re-define influxdb3_version
+  ansible.builtin.set_fact:
+    influxdb3_version: "{{ influx3_downloads.version }}"
+    influxdb3_download_artifact: "{{ influx3_downloads.download_artifact }}"
+    influxdb3_download_url: "{{ influx3_downloads.download_url }}"
+    influxdb3_download_checksum: "{{ influx3_downloads.download_checksum }}"
+
+- name: define delegate instance for download handling
+  when:
+    - not running_in_check_mode
+    - influxdb3_direct_download
+  ansible.builtin.set_fact:
+    influxdb3_delegate_to: "{{ ansible_facts.host }}"
+    influxdb3_local_tmp_directory: "{{
+        lookup('env', 'CUSTOM_LOCAL_TMP_DIRECTORY') |
+        default('/var/cache/ansible/influxdb', true) }}/{{ influxdb3_version }}"
+
+- name: create download directory
+  when:
+    - not running_in_check_mode
+  become: false
+  delegate_to: "{{ influxdb3_delegate_to }}"
+  run_once: "{{ 'false' if influxdb3_direct_download else 'true' }}"
+  ansible.builtin.file:
+    path: "{{ influxdb3_local_tmp_directory }}"
+    state: directory
+    mode: "0750"
+
+- name: detect the downloaded influxdb archive
+  become: false
+  delegate_to: "{{ influxdb3_delegate_to }}"
+  run_once: "{{ 'false' if influxdb3_direct_download else 'true' }}"
+  ansible.builtin.stat:
+    path: "{{ influxdb3_local_tmp_directory }}/{{ influx3_downloads.download_artifact }}"
+  register: stat_influxdb3_archive
+
+- name: download core
+  when:
+    - not running_in_check_mode
+    - stat_influxdb3_archive.stat is defined and not stat_influxdb3_archive.stat.exists | default('false') | bool
+  block:
+    - name: download influxdb archiv {{ influx3_downloads.download_artifact }}
+      become: false
+      delegate_to: "{{ influxdb3_delegate_to }}"
+      run_once: "{{ 'false' if influxdb3_direct_download else 'true' }}"
+      ansible.builtin.get_url:
+        url: "{{ influxdb3_download_url }}"
+        dest: "{{ influxdb3_local_tmp_directory }}/"
+        mode: "0640"
+      register: _download_archive
+      until: _download_archive is succeeded
+      retries: 10
+      delay: 5
+      check_mode: false
+
+  rescue:
+    - name: delete download directory
+      become: false
+      delegate_to: "{{ influxdb3_delegate_to }}"
+      run_once: "{{ 'false' if influxdb3_direct_download else 'true' }}"
+      ansible.builtin.file:
+        path: "{{ influxdb3_local_tmp_directory }}"
+        state: absent
+
+    - name: exit with fail
+      ansible.builtin.fail:
+        msg: A serious error occurred when downloading the archive.
+
+...

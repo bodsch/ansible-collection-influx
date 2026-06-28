@@ -1,0 +1,13 @@
+
+# Global tags can be specified here in key="value" format.
+# Configured via the telegraf_global_tags mapping. Environment variables can be
+# referenced (e.g. user = "$USER") and are expanded by telegraf at runtime.
+[global_tags]
+{% if telegraf_global_tags is defined and telegraf_global_tags is mapping %}
+  {% for key, value in telegraf_global_tags.items() %}
+  {{ key }} = "{{ value }}"
+  {% endfor %}
+{% endif %}
+  # dc = "us-east-1"   # will tag all metrics with dc=us-east-1
+  # rack = "1a"
+  # user = "$USER"
