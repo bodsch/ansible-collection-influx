@@ -1,7 +1,0 @@
----
-
-- name: mkayontour.influxdb
-  src: https://github.com/mkayontour/ansible-influxdb.git
-  scm: git
-
-...

@@ -54,31 +54,6 @@
           - "ansible version      : {{ ansible_version.full }}"
           - "python version       : {{ ansible_facts.python.version.major }}.{{ ansible_facts.python.version.minor }}"
 
-- name: prepare influx1
-  hosts: influx1
-  gather_facts: true
-
-  pre_tasks:
-    - name: package update
-      ansible.builtin.shell:
-        apt -y update && apt -y upgrade
-
-    - name:
-      ansible.builtin.shell:
-        cd /tmp/ ;
-        curl https://repos.influxdata.com/influxdata-archive_compat.key > /tmp/influxdata-archive_compat.key &&
-        echo '393e8779c89ac8d958f81f942f9ad7fb82a25e133faddaf92e15b16e6ac9ce4c /tmp/influxdata-archive_compat.key' | sha256sum -c && cat /tmp/influxdata-archive_compat.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg
-
-    - name: install pip
-      ansible.builtin.package:
-        name: python3-pip
-        state: present
-      when:
-        - ansible_facts.distribution | lower == 'debian'
-
-  roles:
-    - role: mkayontour.influxdb
-
 - name: prepare influx2
   hosts: influx2
   gather_facts: true
