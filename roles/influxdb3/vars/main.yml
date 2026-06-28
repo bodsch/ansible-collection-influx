@@ -4,11 +4,7 @@ influxdb3_main_version: "{{ influxdb3_version[0:1] }}"
 
 influxdb3_bin_version: "influxdb{{ influxdb3_main_version if influxdb3_main_version | int == 2 else '' }}"
 
-influxdb3_install_path: /opt/influxdb/{{ influxdb3_version }}
-
-influxdb3_install_paths:
-  core: /opt/influxd/{{ influxdb3_version }}
-  client: /opt/influx/{{ influxdb3_cli_version }}
+influxdb3_install_path: /opt/influxd/{{ influxdb3_version }}
 
 influxdb3_delegate_to: localhost
 

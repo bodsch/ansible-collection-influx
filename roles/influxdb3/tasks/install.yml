@@ -27,7 +27,7 @@
     group: "{{ influxdb3_system_group }}"
     mode: "0755"
     paths:
-      - path: "{{ influxdb3_install_paths.core }}"
+      - path: "{{ influxdb3_install_path }}"
       - path: "{{ influxdb3_storage_dir }}"
       - path: "{{ influxdb3_storage_dir }}/meta"
       - path: "{{ influxdb3_storage_dir }}/data"
@@ -35,7 +35,7 @@
 
 - name: detect extracted binary file for influxdb3
   ansible.builtin.stat:
-    path: "{{ influxdb3_install_paths.core }}/influxdb3"
+    path: "{{ influxdb3_install_path }}/influxdb3"
   register: stat_influxdb3_file_binary
 
 - name: core
@@ -47,13 +47,13 @@
     - name: propagate influx core archive
       ansible.builtin.copy:
         src: "{{ influxdb3_local_tmp_directory }}/{{ influxdb3_download_artifact }}"
-        dest: "{{ influxdb3_install_paths.core }}/"
+        dest: "{{ influxdb3_install_path }}/"
         remote_src: "{{ 'true' if influxdb3_direct_download else 'false' }}"
 
     - name: extract influxdb archiv
       ansible.builtin.unarchive:
-        src: "{{ influxdb3_install_paths.core }}/{{ influx3_downloads.download_artifact }}"
-        dest: "{{ influxdb3_install_paths.core }}/"
+        src: "{{ influxdb3_install_path }}/{{ influx3_downloads.download_artifact }}"
+        dest: "{{ influxdb3_install_path }}/"
         owner: "{{ influxdb3_system_user }}"
         group: "{{ influxdb3_system_group }}"
         copy: false
@@ -62,13 +62,13 @@
 
     - name: remove influx core archive
       ansible.builtin.file:
-        path: "{{ influxdb3_install_paths.core }}/{{ influxdb3_download_artifact }}"
+        path: "{{ influxdb3_install_path }}/{{ influxdb3_download_artifact }}"
         state: absent
 
   rescue:
     - name: delete install directory
       ansible.builtin.file:
-        path: "{{ influxdb3_install_paths.core }}"
+        path: "{{ influxdb3_install_path }}"
         state: absent
 
     - name: exit with fail
@@ -82,7 +82,7 @@
 
 - name: detect, if influx {{ influxdb3_version }} activated
   ansible.builtin.set_fact:
-    influxdb3_must_activated: "{{ not stat_influxdb3_activated.stat | bodsch.core.linked_version(install_path=influxdb3_install_paths.core, version=influxdb3_version) }}"
+    influxdb3_must_activated: "{{ not stat_influxdb3_activated.stat | bodsch.core.linked_version(install_path=influxdb3_install_path, version=influxdb3_version) }}"
 
 - name: activate influx
   when:
@@ -90,7 +90,7 @@
   block:
     - name: create link to influxdb3 binary
       ansible.builtin.file:
-        src: "{{ influxdb3_install_paths.core }}/influxdb3"
+        src: "{{ influxdb3_install_path }}/influxdb3"
         dest: "/usr/bin/influxdb3"
         state: link
         force: true
