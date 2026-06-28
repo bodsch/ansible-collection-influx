@@ -34,23 +34,6 @@ platforms:
       - name: telegraf
         ipv4_address: "10.11.0.10"
 
-  - name: influx1
-    image: "ghcr.io/bodsch/docker-ansible/ansible-debian:11"
-    command: ${MOLECULE_DOCKER_COMMAND:-""}
-    docker_host: "${DOCKER_HOST:-unix://run/docker.sock}"
-    privileged: true
-    pre_build_image: true
-    cgroupns_mode: host
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
-      - /var/lib/containerd
-    tmpfs:
-      - /run
-      - /tmp
-    networks:
-      - name: telegraf
-        ipv4_address: "10.11.0.11"
-
   - name: influx2
     image: "ghcr.io/bodsch/docker-ansible/ansible-debian:12"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
