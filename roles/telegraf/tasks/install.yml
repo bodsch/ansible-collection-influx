@@ -110,4 +110,10 @@
       notify:
         - restart telegraf
 
+- name: create custom fact file
+  bodsch.core.facts:
+    name: telegraf
+    facts:
+      version: "{{ telegraf_version }}"
+
 ...
