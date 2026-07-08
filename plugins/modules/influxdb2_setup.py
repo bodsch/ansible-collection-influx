@@ -9,6 +9,12 @@
 
 from __future__ import annotations
 
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.influx.plugins.module_utils.influxdb2 import (
+    InfluxDB2Client,
+    InfluxHTTPError,
+    parse_duration,
+)
 
 DOCUMENTATION = r"""
 ---
@@ -93,13 +99,6 @@ bucket:
   type: str
   returned: when changed
 """
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.influx.plugins.module_utils.influxdb2 import (
-    InfluxDB2Client,
-    InfluxHTTPError,
-    parse_duration,
-)
 
 
 def main() -> None:

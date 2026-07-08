@@ -9,6 +9,13 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.influx.plugins.module_utils.influxdb3 import (
+    InfluxDB3Client,
+    InfluxHTTPError,
+)
 
 DOCUMENTATION = r"""
 ---
@@ -77,14 +84,6 @@ msg:
   type: str
   returned: always
 """
-
-import os
-from pathlib import Path
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.influx.plugins.module_utils.influxdb3 import (
-    InfluxDB3Client,
-    InfluxHTTPError,
-)
 
 
 def _major_version(value: str) -> int | None:

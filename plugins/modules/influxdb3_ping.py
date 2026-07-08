@@ -9,6 +9,11 @@
 
 from __future__ import annotations
 
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.influx.plugins.module_utils.influxdb3 import (
+    InfluxDB3Client,
+    InfluxHTTPError,
+)
 
 DOCUMENTATION = r"""
 ---
@@ -60,12 +65,6 @@ status:
   type: int
   returned: always
 """
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.influx.plugins.module_utils.influxdb3 import (
-    InfluxDB3Client,
-    InfluxHTTPError,
-)
 
 
 def main() -> None:

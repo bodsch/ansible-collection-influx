@@ -9,6 +9,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
+from ansible_collections.bodsch.influx.plugins.module_utils.influxdb3 import (
+    InfluxDB3Client,
+    InfluxHTTPError,
+)
 
 DOCUMENTATION = r"""
 ---
@@ -65,13 +72,6 @@ databases:
   returned: always
 """
 
-from typing import Any
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.core.plugins.module_utils.module_results import results
-from ansible_collections.bodsch.influx.plugins.module_utils.influxdb3 import (
-    InfluxDB3Client,
-    InfluxHTTPError,
-)
 
 _ABSENT = ("absent", "delete", "removed")
 

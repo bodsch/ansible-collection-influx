@@ -9,6 +9,9 @@
 
 from __future__ import annotations
 
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.bodsch.influx.plugins.module_utils.influx_downloads import InfluxDownloads
+
 
 DOCUMENTATION = r"""
 ---
@@ -101,9 +104,6 @@ download_checksum:
   type: str
   returned: success
 """
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.bodsch.influx.plugins.module_utils.influx_downloads import InfluxDownloads
 
 
 def main() -> None:
