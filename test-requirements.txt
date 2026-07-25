@@ -9,5 +9,9 @@ pytest
 pytest-testinfra
 pytest-xdist
 tox
+tox-uv
 tox-gh-actions
 yamllint
+requests
+python-dateutil
+packaging
