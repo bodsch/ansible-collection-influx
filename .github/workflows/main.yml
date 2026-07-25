@@ -39,10 +39,11 @@ env:
   COLLECTION_NAME: influx
   PY_COLORS: '1'
   ANSIBLE_FORCE_COLOR: '1'
+  GH_TOKEN: '${{ secrets.GH_TOKEN }}'
 
-defaults:
-  run:
-    working-directory: 'ansible-collection-influx'
+# defaults:
+#   run:
+#     working-directory: 'ansible-collection-influx'
 
 jobs:
   arch:
@@ -68,12 +69,17 @@ jobs:
       - name: check out the codebase.
         uses: actions/checkout@v6.0.2
         with:
-          path: 'ansible-collection-influx'
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: 🐍 set up python
         uses: actions/setup-python@v6.2.0
         with:
           python-version: "${{ matrix.python_version }}"
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y python3-dateutil
 
       - name: install dependencies
         run: |
