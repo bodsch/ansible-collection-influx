@@ -96,6 +96,11 @@ jobs:
           mkdir -p /home/runner/.ansible/collections
           ansible-galaxy collection install community.docker --force
 
+      - name: Install hooks
+        run: |
+          make \
+            fetch-hooks
+
       - name: Install collection
         run: |
           make \
